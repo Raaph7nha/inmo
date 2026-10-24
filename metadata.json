@@ -1,0 +1,6 @@
+{
+  "name": "HabitaBogotá - Inmobiliaria Transparente",
+  "description": "Plataforma inmobiliaria en Bogotá con desglose transparente de costos (Arriendo + Adm = Total), mapa interactivo con transporte y zonas de riesgo, tour virtual 3D y comparador de inmuebles accesible (WCAG 2.1 AA).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

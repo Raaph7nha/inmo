@@ -1,0 +1,129 @@
+/* ==========================================================================
+   HABITABOGOTÁ — /css/base.css: Reset, Accesibilidad, Tipografía y Textura
+   ========================================================================== */
+
+/* Reset de modelo de caja */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  line-height: 1.55;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  /* Textura sutil de grano de papel andino */
+  background-image: radial-gradient(rgba(22, 32, 43, 0.04) 1px, transparent 1px);
+  background-size: 18px 18px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Enlace accesible para saltar al contenido principal */
+.skip-link {
+  position: absolute;
+  top: -120px;
+  left: var(--space-4);
+  background: var(--color-ink);
+  color: var(--color-cream);
+  padding: var(--space-3) var(--space-5);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  border: 2px solid var(--color-mustard);
+  border-radius: var(--radius-sm);
+  z-index: 10000;
+  text-decoration: none;
+  box-shadow: var(--shadow-offset);
+  transition: top 0.2s ease;
+}
+.skip-link:focus {
+  top: var(--space-4);
+  outline: none;
+}
+
+/* Foco accesible con contorno de marca terracota */
+:focus-visible {
+  outline: 2px solid var(--color-terracotta);
+  outline-offset: 2px;
+}
+
+/* Respeta preferencia de reducción de movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Clases de utilidad accesibles */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Iconos SVG inline */
+.icon {
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  vertical-align: middle;
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+}
+.icon--sm { width: 1rem; height: 1rem; }
+.icon--lg { width: 1.5rem; height: 1.5rem; }
+.icon--xl { width: 2rem; height: 2rem; }
+
+/* Enlaces y botones de texto */
+a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Encabezados editoriales */
+h1, h2, h3, h4 {
+  font-family: var(--font-serif);
+  color: var(--color-ink);
+  line-height: 1.2;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+p {
+  color: var(--color-ink-muted);
+}

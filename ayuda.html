@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Requisitos Legales y Preguntas Frecuentes — HabitaBogotá</title>
+  <meta name="description" content="Guía legal de arrendamiento en Bogotá: tenencia de mascotas, cálculo de ingresos, fianzas digitales y soporte inmobiliario.">
+
+  <!-- Tipografías: Fraunces + DM Sans + Space Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Fraunces:ital,opsz,wght@0,9..144,600..800;1,9..144,400;1,9..144,700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/pages.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+
+  <script defer src="/js/data.js"></script>
+  <script defer src="/js/state.js"></script>
+  <script defer src="/js/filters.js"></script>
+  <script defer src="/js/render.js"></script>
+  <script defer src="/js/map.js"></script>
+  <script defer src="/js/compare.js"></script>
+  <script defer src="/js/modal.js"></script>
+  <script defer src="/js/main.js"></script>
+</head>
+<body>
+
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+  <!-- HEADER -->
+  <header class="header" role="banner">
+    <div class="container header__inner">
+      <a href="/index.html" class="brand" aria-label="HabitaBogotá Inicio">
+        <div class="brand__emblem" aria-hidden="true">
+          <svg class="icon icon--sm" viewBox="0 0 24 24" style="stroke: #fff;"><use href="/assets/icons.svg#icon-building"></use></svg>
+        </div>
+        <div class="brand__text">Habita<span>Bogotá</span></div>
+        <span class="brand__tag">BOGOTÁ · COP</span>
+      </a>
+
+      <nav class="nav-menu" role="navigation" aria-label="Navegación principal">
+        <a href="/index.html" class="nav-link">Explorar Inmuebles</a>
+        <a href="/guardados.html" class="nav-link">
+          <span>Mis Guardados</span>
+          <span class="stamp-seal" style="padding: 1px 6px; font-size: 0.7rem;" data-counter="saved">0</span>
+        </a>
+        <a href="/comparador.html" class="nav-link">
+          <span>Comparador</span>
+          <span class="stamp-seal stamp-seal--featured" style="padding: 1px 6px; font-size: 0.7rem;" data-counter="compare">0</span>
+        </a>
+        <a href="/ayuda.html" class="nav-link nav-link--active">Requisitos & Ley</a>
+      </nav>
+
+      <div class="header__actions">
+        <div class="user-badge" title="Sesión activa como Valeria R.">
+          <div class="user-badge__avatar" aria-hidden="true">VR</div>
+          <span>Valeria R.</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Barra móvil inferior -->
+  <nav class="mobile-nav-bar" role="navigation" aria-label="Acciones rápidas móviles">
+    <a href="/index.html" class="mobile-nav-item">
+      <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#icon-search"></use></svg>
+      <span>Buscar</span>
+    </a>
+    <a href="/guardados.html" class="mobile-nav-item">
+      <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#icon-heart"></use></svg>
+      <span>Guardados</span>
+      <span class="stamp-seal" style="position: absolute; top: 4px; right: 20%; padding: 1px 5px; font-size: 0.65rem;" data-counter="saved">0</span>
+    </a>
+    <a href="/comparador.html" class="mobile-nav-item">
+      <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#icon-compare"></use></svg>
+      <span>Comparar</span>
+      <span class="stamp-seal stamp-seal--featured" style="position: absolute; top: 4px; right: 20%; padding: 1px 5px; font-size: 0.65rem;" data-counter="compare">0</span>
+    </a>
+    <a href="/ayuda.html" class="mobile-nav-item mobile-nav-item--active">
+      <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#icon-alert"></use></svg>
+      <span>Requisitos</span>
+    </a>
+  </nav>
+
+  <!-- CONTENIDO: REQUISITOS Y PREGUNTAS FRECUENTES -->
+  <main class="container main-content" id="main-content" role="main" style="padding-top: var(--space-8);">
+    
+    <div style="border-bottom: 1.5px solid var(--color-ink); padding-bottom: var(--space-5); margin-bottom: var(--space-8);">
+      <div class="stamp-seal stamp-seal--featured" style="margin-bottom: var(--space-2);">
+        GUÍA JURÍDICA Y PEDAGÓGICA BOGOTÁ
+      </div>
+      <h1 style="font-size: clamp(2rem, 4vw, 2.75rem); margin-bottom: var(--space-2);">
+        Requisitos para Arrendar & Marco Legal
+      </h1>
+      <p style="font-size: var(--text-md); color: var(--color-ink-muted); max-width: 72ch;">
+        Todo lo que necesitas saber antes de postularte a un apartamento o casa en Bogotá: ingresos exigidos, tenencia legal de mascotas y fianza digital sin finca raíz.
+      </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-8);">
+      
+      <!-- Acordeón de Preguntas Frecuentes -->
+      <div>
+        
+        <!-- FAQ 1: Tenencia de Mascotas (Sentencia T-035/97 y Ley 675) -->
+        <div class="accordion-item accordion-item--open">
+          <button type="button" class="accordion-trigger" aria-expanded="true">
+            <span>¿Pueden prohibirme tener mascotas en un apartamento arrendado?</span>
+            <svg class="icon icon--sm"><use href="/assets/icons.svg#icon-chevron-down"></use></svg>
+          </button>
+          <div class="accordion-panel">
+            <p style="margin-bottom: var(--space-2);">
+              En Colombia, la <strong>Sentencia T-035 de 1997</strong> de la Corte Constitucional y la <strong>Ley 675 de 2001</strong> de Propiedad Horizontal establecen que la tenencia de animales de compañía es un derecho derivado del libre desarrollo de la personalidad y la intimidad familiar.
+            </p>
+            <p>
+              Por ende, ningún reglamento de propiedad horizontal ni contrato de arrendamiento puede prohibir de manera general e indiscriminada la presencia de mascotas. Los conjuntos únicamente pueden reglamentar normas de convivencia razonables (uso de correa en áreas comunes, manejo de desechos y control de ruidos excesivos).
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ 2: Ingresos y Estudio -->
+        <div class="accordion-item">
+          <button type="button" class="accordion-trigger" aria-expanded="false">
+            <span>¿Cuánto ingreso debo demostrar ante la aseguradora?</span>
+            <svg class="icon icon--sm"><use href="/assets/icons.svg#icon-chevron-down"></use></svg>
+          </button>
+          <div class="accordion-panel">
+            <p>
+              Las principales aseguradoras inmobiliarias de Bogotá (El Libertador, Seguros SURA, FianzaCrédito) exigen demostrar ingresos netos mensuales equivalentes a <strong>2.5 o 3 veces el valor total mensual</strong> (canon base + cuota de administración). Es totalmente válido sumar ingresos entre dos personas que vayan a habitar el inmueble.
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ 3: Codeudor Finca Raíz vs Fianza Digital -->
+        <div class="accordion-item">
+          <button type="button" class="accordion-trigger" aria-expanded="false">
+            <span>¿Es indispensable contar con un fiador con finca raíz en Bogotá?</span>
+            <svg class="icon icon--sm"><use href="/assets/icons.svg#icon-chevron-down"></use></svg>
+          </button>
+          <div class="accordion-panel">
+            <p>
+              Actualmente <strong>ya no es un requisito obligatorio</strong>. Las plataformas de afianzamiento digital permiten arrendar con codeudor que solo certifique solvencia laboral (extractos y certificado de ingresos) o incluso de forma individual si tu historial crediticio en Datacrédito/TransUnion es sobresaliente.
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ 4: Desglose Transparente -->
+        <div class="accordion-item">
+          <button type="button" class="accordion-trigger" aria-expanded="false">
+            <span>¿Por qué en HabitaBogotá sumamos siempre la administración?</span>
+            <svg class="icon icon--sm"><use href="/assets/icons.svg#icon-chevron-down"></use></svg>
+          </button>
+          <div class="accordion-panel">
+            <p>
+              Según nuestra investigación con usuarios bogotanos, el <strong>39% de las personas se frustra por cobros ocultos de administración</strong> al visitar el inmueble. En HabitaBogotá el precio de portada es SIEMPRE la suma matemática real de canon + cuota ordinaria de administración: lo que pagas mes a mes sin sorpresas.
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ 5: Costo del estudio -->
+        <div class="accordion-item">
+          <button type="button" class="accordion-trigger" aria-expanded="false">
+            <span>¿Qué costo tiene el estudio digital y cuánto demora?</span>
+            <svg class="icon icon--sm"><use href="/assets/icons.svg#icon-chevron-down"></use></svg>
+          </button>
+          <div class="accordion-panel">
+            <p>
+              El estudio de crédito tiene un costo único estandarizado de aproximadamente el <strong>5% del valor del canon mensual + IVA</strong>. La respuesta de las aseguradoras digitales suele emitirse en un plazo de 4 a 24 horas hábiles tras adjuntar extractos bancarios y cédula.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Formulario de Atención y Soporte Inmobiliario -->
+      <div style="background: var(--color-sand); border: 2px solid var(--color-ink); border-radius: var(--radius-card); padding: var(--space-6); box-shadow: var(--shadow-offset); max-width: 680px;">
+        <h2 style="font-size: var(--text-xl); margin-bottom: var(--space-2);">¿Deseas asesoría personalizada?</h2>
+        <p style="font-size: var(--text-sm); color: var(--color-ink-muted); margin-bottom: var(--space-5);">
+          Déjanos tus datos o escribe tu consulta sobre contratos, cánones o requisitos en Bogotá.
+        </p>
+
+        <form id="form-support-advisor" style="display: flex; flex-direction: column; gap: var(--space-4);">
+          <div>
+            <label for="support-input-name" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Tu nombre completo</label>
+            <input type="text" id="support-input-name" class="hero-search-input" style="width: 100%; height: 44px;" placeholder="Ej: Mateo Salazar" required>
+          </div>
+
+          <div>
+            <label for="support-input-email" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Correo electrónico de contacto</label>
+            <input type="email" id="support-input-email" class="hero-search-input" style="width: 100%; height: 44px;" placeholder="mateo@ejemplo.com" required>
+          </div>
+
+          <div>
+            <label for="support-input-msg" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">¿Cuál es tu consulta o necesidad?</label>
+            <textarea id="support-input-msg" class="hero-search-input" style="width: 100%; height: 100px; padding: 10px; resize: none;" placeholder="Ej: Quiero saber si mis ingresos como estudiante nocturno con trabajo remoto aplican para el apartamento en Quinta Camacho..." required></textarea>
+          </div>
+
+          <button type="submit" class="btn btn--primary" style="align-self: flex-start;">
+            <span>Radicar consulta gratuita</span>
+            <svg class="icon icon--sm"><use href="/assets/icons.svg#icon-arrow-right"></use></svg>
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer" role="contentinfo">
+    <div class="container footer__bottom">
+      <div>© 2026 HabitaBogotá S.A.S. — Diseñado con transparencia andina y accesibilidad WCAG 2.1 AA.</div>
+      <div>Bogotá D.C. · Precios en Pesos Colombianos (COP)</div>
+    </div>
+  </footer>
+
+</body>
+</html>

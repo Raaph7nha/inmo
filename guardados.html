@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis Guardados — HabitaBogotá</title>
+  <meta name="description" content="Colección de inmuebles favoritos guardados en Bogotá sin perder tus preferencias.">
+
+  <!-- Tipografías: Fraunces + DM Sans + Space Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Fraunces:ital,opsz,wght@0,9..144,600..800;1,9..144,400;1,9..144,700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/pages.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+
+  <script defer src="/js/data.js"></script>
+  <script defer src="/js/state.js"></script>
+  <script defer src="/js/filters.js"></script>
+  <script defer src="/js/render.js"></script>
+  <script defer src="/js/map.js"></script>
+  <script defer src="/js/compare.js"></script>
+  <script defer src="/js/modal.js"></script>
+  <script defer src="/js/main.js"></script>
+</head>
+<body>
+
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+  <!-- HEADER -->
+  <header class="header" role="banner">
+    <div class="container header__inner">
+      <a href="/index.html" class="brand" aria-label="HabitaBogotá Inicio">
+        <div class="brand__emblem" aria-hidden="true">
+          <svg class="icon icon--sm" viewBox="0 0 24 24" style="stroke: #fff;"><use href="/assets/icons.svg#icon-building"></use></svg>
+        </div>
+        <div class="brand__text">Habita<span>Bogotá</span></div>
+        <span class="brand__tag">BOGOTÁ · COP</span>
+      </a>
+
+      <nav class="nav-menu" role="navigation" aria-label="Navegación principal">
+        <a href="/index.html" class="nav-link">Explorar Inmuebles</a>
+        <a href="/guardados.html" class="nav-link nav-link--active">
+          <span>Mis Guardados</span>
+          <span class="stamp-seal" style="padding: 1px 6px; font-size: 0.7rem;" data-counter="saved">0</span>
+        </a>
+        <a href="/comparador.html" class="nav-link">
+          <span>Comparador</span>
+          <span class="stamp-seal stamp-seal--featured" style="padding: 1px 6px; font-size: 0.7rem;" data-counter="compare">0</span>
+        </a>
+        <a href="/ayuda.html" class="nav-link">Requisitos & Ley</a>
+      </nav>
+
+      <div class="header__actions">
+        <div class="user-badge" title="Sesión activa como Valeria R.">
+          <div class="user-badge__avatar" aria-hidden="true">VR</div>
+          <span>Valeria R.</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Barra móvil inferior -->
+  <nav class="mobile-nav-bar" role="navigation" aria-label="Acciones rápidas móviles">
+    <a href="/index.html" class="mobile-nav-item">
+      <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#icon-search"></use></svg>
+      <span>Buscar</span>
+    </a>
+    <a href="/guardados.html" class="mobile-nav-item mobile-nav-item--active">
+      <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#icon-heart"></use></svg>
+      <span>Guardados</span>
+      <span class="stamp-seal" style="position: absolute; top: 4px; right: 20%; padding: 1px 5px; font-size: 0.65rem;" data-counter="saved">0</span>
+    </a>
+    <a href="/comparador.html" class="mobile-nav-item">
+      <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#icon-compare"></use></svg>
+      <span>Comparar</span>
+      <span class="stamp-seal stamp-seal--featured" style="position: absolute; top: 4px; right: 20%; padding: 1px 5px; font-size: 0.65rem;" data-counter="compare">0</span>
+    </a>
+    <a href="/ayuda.html" class="mobile-nav-item">
+      <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#icon-alert"></use></svg>
+      <span>Requisitos</span>
+    </a>
+  </nav>
+
+  <!-- CONTENIDO: MIS GUARDADOS -->
+  <main class="container main-content" id="main-content" role="main" style="padding-top: var(--space-8);">
+    
+    <div style="display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); border-bottom: 1.5px solid var(--color-ink); padding-bottom: var(--space-4); margin-bottom: var(--space-8);">
+      <div>
+        <h1 style="font-size: clamp(1.8rem, 3.5vw, 2.5rem); margin-bottom: var(--space-1);">Mis Inmuebles Guardados</h1>
+        <p style="font-size: var(--text-md); color: var(--color-ink-muted);" id="saved-count-lead">Tus propiedades preferidas en Bogotá.</p>
+      </div>
+      <a href="/index.html" class="btn btn--secondary">
+        <svg class="icon icon--sm" aria-hidden="true"><use href="/assets/icons.svg#icon-search"></use></svg>
+        <span>Buscar más inmuebles</span>
+      </a>
+    </div>
+
+    <!-- Cuadrícula de Guardados -->
+    <div class="results-grid" id="saved-properties-grid" aria-live="polite"></div>
+
+    <!-- Estado vacío ilustrado -->
+    <div class="empty-box" id="saved-empty-state" style="display: none;">
+      <div class="empty-box__illustration" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" style="width: 100%; height: 100%;">
+          <rect x="20" y="20" width="60" height="60" rx="10" stroke="#16202B" stroke-width="2" fill="#E7DCCB" />
+          <path d="M50 40 Q 60 25 70 35 T 50 65 Q 40 50 30 35 T 50 40 Z" stroke="#B4472B" stroke-width="2.5" fill="#FCEEEA" />
+        </svg>
+      </div>
+      <h2 class="empty-box__title">Aún no has guardado inmuebles</h2>
+      <p class="empty-box__desc">Haz clic en el corazón de cualquier tarjeta para hacer seguimiento a tus apartamentos o casas preferidas sin perderlas.</p>
+      <a href="/index.html" class="btn btn--primary">Explorar catálogo de Bogotá</a>
+    </div>
+
+  </main>
+
+  <!-- MODAL TOUR VIRTUAL 360° -->
+  <div class="modal-overlay" id="modal-tour-3d" role="dialog" aria-modal="true" aria-labelledby="tour-modal-title">
+    <div class="modal-window">
+      <div class="modal-window__header">
+        <h2 class="modal-window__title" id="tour-modal-title">Tour Virtual 360° Interactivo</h2>
+        <button type="button" class="btn btn--ghost" style="padding: 4px;" onclick="closeModal()" aria-label="Cerrar tour virtual">
+          <svg class="icon"><use href="/assets/icons.svg#icon-close"></use></svg>
+        </button>
+      </div>
+      <div class="tour360-canvas" id="tour-canvas-stage" tabindex="0">
+        <div class="tour360-panorama" id="tour-panorama-bg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer" role="contentinfo">
+    <div class="container footer__bottom">
+      <div>© 2026 HabitaBogotá S.A.S. — Diseñado con calidez andina y accesibilidad WCAG 2.1 AA.</div>
+      <div>Bogotá D.C. · Precios en Pesos Colombianos (COP)</div>
+    </div>
+  </footer>
+
+</body>
+</html>

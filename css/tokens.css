@@ -1,0 +1,101 @@
+/* ==========================================================================
+   HABITABOGOTÁ — SISTEMA DE DISEÑO: "Bogotá cálida y editorial"
+   /css/tokens.css: Variables de diseño, paleta andina, tipografías y sombras
+   ========================================================================== */
+
+:root {
+  /* --- PALETA BOGOTANA EDITORIAL --- */
+  /* Fondo crema cálido con evocación a papel antiguo */
+  --color-cream: #F6F1E9;
+  --color-cream-light: #FCFAF6;
+  --color-sand: #E7DCCB;
+  --color-sand-muted: #D8CCA8;
+
+  /* Tinta casi negra azulada para texto con máximo contraste AA/AAA */
+  --color-ink: #16202B;
+  --color-ink-muted: #4F5D6B;
+  --color-ink-light: #7E8C9A;
+  --color-border: #D8CFBF;
+  --color-border-dark: #16202B;
+
+  /* Terracota / Ladrillo bogotano — Marca y llamadas a la acción */
+  --color-terracotta: #B4472B;
+  --color-terracotta-dark: #8F331C;
+  --color-terracotta-light: #F8EAE5;
+  --color-terracotta-tint: #F2D2C8;
+
+  /* Verde Musgo / Cerros Orientales — Transparencia de costos y confirmaciones */
+  --color-moss: #3F5E4A;
+  --color-moss-dark: #2D4435;
+  --color-moss-light: #EBF2ED;
+  --color-moss-tint: #C7DEC7;
+
+  /* Mostaza / Dorado Andino — Acento puntual (Tour 3D, "Ver más filtros") */
+  --color-mustard: #E0A526;
+  --color-mustard-dark: #BA8518;
+  --color-mustard-light: #FDF6E4;
+  --color-mustard-text: #614407;
+
+  /* Alerta y Zonas de Riesgo — Rojo apagado */
+  --color-alert: #C93B2B;
+  --color-alert-light: #FBECE9;
+  --color-alert-text: #78190F;
+
+  /* --- TIPOGRAFÍA CON CARÁCTER --- */
+  /* Serif expresiva para títulos y total mensual destacado */
+  --font-serif: 'Fraunces', Georgia, serif;
+  /* Sans humanista legible para textos de lectura e interfaz */
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Monospace para coordenadas y datos tabulares */
+  --font-mono: 'Space Mono', monospace;
+
+  /* Escala tipográfica modular */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.84375rem;  /* 13.5px */
+  --text-base: 0.9375rem; /* 15px */
+  --text-md: 1.0625rem;   /* 17px */
+  --text-lg: 1.25rem;     /* 20px */
+  --text-xl: 1.5rem;      /* 24px */
+  --text-2xl: 1.875rem;   /* 30px */
+  --text-3xl: 2.375rem;   /* 38px */
+  --text-4xl: 3rem;       /* 48px */
+
+  /* --- ESPACIADO MATEMÁTICO --- */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+
+  /* --- RADIOS MIXTOS (Personalidad sin efecto píldora genérica) --- */
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-card: 16px 4px 16px 4px; /* Radios asimétricos estilo editorial */
+  --radius-card-alt: 4px 16px 4px 16px;
+  --radius-pill: 9999px;
+
+  /* --- SOMBRAS DURAS DESPLAZADAS ("Offset Shadow" editorial) --- */
+  --shadow-flat: 1px 1px 0px var(--color-ink);
+  --shadow-offset-sm: 2px 2px 0px var(--color-ink);
+  --shadow-offset: 3px 3px 0px var(--color-ink);
+  --shadow-offset-lg: 5px 5px 0px var(--color-ink);
+  --shadow-offset-terracotta: 3px 3px 0px var(--color-terracotta-dark);
+  --shadow-offset-mustard: 3px 3px 0px var(--color-mustard-dark);
+  --shadow-soft: 0 4px 14px rgba(22, 32, 43, 0.08);
+
+  /* --- TRANSICIONES Y Z-INDEX --- */
+  --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
+  --speed-fast: 160ms;
+  --speed-normal: 240ms;
+
+  --z-base: 1;
+  --z-sticky: 100;
+  --z-drawer: 500;
+  --z-modal: 1000;
+  --z-toast: 2000;
+}
