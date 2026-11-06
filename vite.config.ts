@@ -3,22 +3,24 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 
+const appDir = typeof import.meta.dirname !== 'undefined' ? import.meta.dirname : path.resolve('.');
+
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(appDir, '.'),
       },
     },
     build: {
       rollupOptions: {
         input: {
-          main: path.resolve(__dirname, 'index.html'),
-          inmueble: path.resolve(__dirname, 'inmueble.html'),
-          guardados: path.resolve(__dirname, 'guardados.html'),
-          comparador: path.resolve(__dirname, 'comparador.html'),
-          ayuda: path.resolve(__dirname, 'ayuda.html'),
+          main: path.resolve(appDir, 'index.html'),
+          inmueble: path.resolve(appDir, 'inmueble.html'),
+          guardados: path.resolve(appDir, 'guardados.html'),
+          comparador: path.resolve(appDir, 'comparador.html'),
+          ayuda: path.resolve(appDir, 'ayuda.html'),
         },
       },
     },
