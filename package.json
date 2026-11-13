@@ -1,27 +1,37 @@
 {
-  "name": "react-example",
+  "name": "habitabogota",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Plataforma inmobiliaria transparente en Bogotá con Neon Postgres, Express y chat IA con Groq",
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
-    "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "vite build && node scripts/copy-assets.js",
+    "dev": "node server.js",
     "start": "node server.js",
-    "preview": "vite preview",
-    "clean": "rm -rf dist",
+    "build": "node --check server.js && node -e \"console.log('HabitaBogota listo para produccion')\"",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
     "@tailwindcss/vite": "^4.3.3",
+    "@types/cors": "^2.8.19",
+    "@types/pg": "^8.23.1",
     "@vitejs/plugin-react": "^6.1.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.4",
+    "groq-sdk": "^1.6.0",
+    "helmet": "^8.3.0",
     "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "pg": "^8.23.1",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "vite": "^8.3.0",
-    "express": "^4.21.2",
-    "dotenv": "^17.2.3",
-    "motion": "^12.23.24"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

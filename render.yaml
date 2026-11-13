@@ -1,8 +1,5 @@
 # Configuración de despliegue para Render (https://render.com)
-# Puedes desplegarlo como Web Service (Node.js) o como Static Site.
-
 services:
-  # Opción 1: Web Service en Node.js (con Express y soporte de rutas amigables)
   - type: web
     name: habitabogota
     env: node
@@ -10,14 +7,15 @@ services:
     region: oregon
     buildCommand: npm install --legacy-peer-deps && npm run build
     startCommand: npm start
-    healthCheckPath: /healthz
+    healthCheckPath: /api/salud
     envVars:
       - key: NODE_ENV
         value: production
-
-  # Opción 2: Sitio Estático (100% gratuito, sin servidor Node)
-  # Si prefieres solo estático en Render, usa:
-  # - type: static
-  #   name: habitabogota-static
-  #   buildCommand: npm run build
-  #   staticPublishPath: ./dist
+      - key: DATABASE_URL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: ALLOWED_ORIGIN
+        sync: false
