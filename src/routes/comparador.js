@@ -1,14 +1,15 @@
 /**
  * HABITABOGOTÁ — /src/routes/comparador.js
- * Comparador persistido por sesión (máximo 3 inmuebles validado en el servidor).
+ * Comparador persistido por usuario autenticado (máximo 3 viviendas).
  */
 
 import { Router } from 'express';
 import { z } from 'zod';
 import { isDatabaseConfigured, query, withTransaction } from '../db.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
-import { requireSessionId, validateBody, validateParams } from '../middleware/validate.js';
-import { getInmueblesByIds } from '../services/inmueblesQuery.js';
+import { optionalAuth, requireAuth } from '../middleware/auth.js';
+import { validateBody, validateParams } from '../middleware/validate.js';
+import { getViviendasByIds } from '../services/viviendasQuery.js';
 import { memoryStore } from '../services/memoryStore.js';
 
 const router = Router();
@@ -22,28 +23,31 @@ const paramSchema = z.object({
   inmuebleId: z.coerce.number().int().positive()
 });
 
-async function fetchSessionCompare(sesionId) {
+async function fetchUserCompare(userId) {
   let ids;
   if (!isDatabaseConfigured()) {
-    ids = memoryStore.getComparadorIds(sesionId);
+    ids = memoryStore.getComparadorIds(userId);
   } else {
     const res = await query(
-      'SELECT inmueble_id FROM comparador WHERE sesion_id = $1 ORDER BY creado_en ASC',
-      [sesionId]
+      'SELECT vivienda_id FROM comparador WHERE usuario_id = $1 ORDER BY creado_en ASC',
+      [userId]
     );
-    ids = res.rows.map((r) => Number(r.inmueble_id));
+    ids = res.rows.map((r) => Number(r.vivienda_id));
   }
-  const inmuebles = await getInmueblesByIds(ids);
+  const inmuebles = await getViviendasByIds(ids);
   return { ids, inmuebles };
 }
 
-router.use(requireSessionId);
+router.use(optionalAuth);
 
 // GET /api/comparador
 router.get(
   '/',
   asyncHandler(async (req, res) => {
-    const data = await fetchSessionCompare(req.sesionId);
+    if (!req.usuario) {
+      return res.json({ ids: [], inmuebles: [] });
+    }
+    const data = await fetchUserCompare(req.usuario.id);
     return res.json(data);
   })
 );
@@ -51,31 +55,32 @@ router.get(
 // POST /api/comparador
 router.post(
   '/',
+  requireAuth,
   validateBody(bodySchema),
   asyncHandler(async (req, res) => {
     const { inmueble_id } = req.validatedBody;
+    const userId = req.usuario.id;
 
     if (!isDatabaseConfigured()) {
-      if (!memoryStore.getInmuebleById(inmueble_id)) {
-        throw new AppError('El inmueble no existe.', 404, 'PROPERTY_NOT_FOUND');
+      if (!memoryStore.getViviendaById(inmueble_id)) {
+        throw new AppError('La vivienda no existe.', 404, 'PROPERTY_NOT_FOUND');
       }
-      const { status } = memoryStore.addComparador(req.sesionId, inmueble_id);
-      const data = await fetchSessionCompare(req.sesionId);
+      const { status } = memoryStore.addComparador(userId, inmueble_id);
+      const data = await fetchUserCompare(userId);
       return res.status(status).json({ ok: true, ...data });
     }
 
-    const exists = await query('SELECT id FROM inmuebles WHERE id = $1', [inmueble_id]);
+    const exists = await query('SELECT id FROM viviendas WHERE id = $1', [inmueble_id]);
     if (!exists.rows.length) {
-      throw new AppError('El inmueble no existe.', 404, 'PROPERTY_NOT_FOUND');
+      throw new AppError('La vivienda no existe.', 404, 'PROPERTY_NOT_FOUND');
     }
 
     const status = await withTransaction(async (client) => {
-      // Bloquear filas de la sesión para validar máximo 3 de forma atómica
       const currentRes = await client.query(
-        'SELECT inmueble_id FROM comparador WHERE sesion_id = $1 FOR UPDATE',
-        [req.sesionId]
+        'SELECT vivienda_id FROM comparador WHERE usuario_id = $1 FOR UPDATE',
+        [userId]
       );
-      const currentIds = currentRes.rows.map((r) => Number(r.inmueble_id));
+      const currentIds = currentRes.rows.map((r) => Number(r.vivienda_id));
 
       if (currentIds.includes(inmueble_id)) {
         return 200;
@@ -90,26 +95,28 @@ router.post(
       }
 
       await client.query(
-        'INSERT INTO comparador (sesion_id, inmueble_id) VALUES ($1, $2)',
-        [req.sesionId, inmueble_id]
+        'INSERT INTO comparador (usuario_id, vivienda_id) VALUES ($1, $2)',
+        [userId, inmueble_id]
       );
       return 201;
     });
 
-    const data = await fetchSessionCompare(req.sesionId);
+    const data = await fetchUserCompare(userId);
     return res.status(status).json({ ok: true, ...data });
   })
 );
 
-// DELETE /api/comparador (vaciar todo el comparador de la sesión)
+// DELETE /api/comparador
 router.delete(
   '/',
+  requireAuth,
   asyncHandler(async (req, res) => {
+    const userId = req.usuario.id;
     if (!isDatabaseConfigured()) {
-      memoryStore.clearComparador(req.sesionId);
+      memoryStore.clearComparador(userId);
       return res.json({ ok: true, ids: [], inmuebles: [] });
     }
-    await query('DELETE FROM comparador WHERE sesion_id = $1', [req.sesionId]);
+    await query('DELETE FROM comparador WHERE usuario_id = $1', [userId]);
     return res.json({ ok: true, ids: [], inmuebles: [] });
   })
 );
@@ -117,18 +124,24 @@ router.delete(
 // DELETE /api/comparador/:inmuebleId
 router.delete(
   '/:inmuebleId',
+  requireAuth,
   validateParams(paramSchema),
   asyncHandler(async (req, res) => {
+    const userId = req.usuario.id;
+    const viviendaId = req.validatedParams.inmuebleId;
+
     if (!isDatabaseConfigured()) {
-      memoryStore.removeComparador(req.sesionId, req.validatedParams.inmuebleId);
-      const data = await fetchSessionCompare(req.sesionId);
+      memoryStore.removeComparador(userId, viviendaId);
+      const data = await fetchUserCompare(userId);
       return res.json({ ok: true, ...data });
     }
+
     await query(
-      'DELETE FROM comparador WHERE sesion_id = $1 AND inmueble_id = $2',
-      [req.sesionId, req.validatedParams.inmuebleId]
+      'DELETE FROM comparador WHERE usuario_id = $1 AND vivienda_id = $2',
+      [userId, viviendaId]
     );
-    const data = await fetchSessionCompare(req.sesionId);
+
+    const data = await fetchUserCompare(userId);
     return res.json({ ok: true, ...data });
   })
 );

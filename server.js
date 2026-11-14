@@ -11,11 +11,16 @@ import { fileURLToPath } from 'node:url';
 import helmet from 'helmet';
 import cors from 'cors';
 
-import { checkDbHealth } from './src/db.js';
+import cookieParser from 'cookie-parser';
+
+import { checkDbHealth, query } from './src/db.js';
 import { apiLimiter } from './src/middleware/rateLimit.js';
 import { notFoundHandler, errorHandler } from './src/middleware/errorHandler.js';
 
-import inmueblesRouter from './src/routes/inmuebles.js';
+import authRouter from './src/routes/auth.js';
+import cloudinaryRouter from './src/routes/cloudinary.js';
+import puntosInteresRouter from './src/routes/puntos-interes.js';
+import viviendasRouter from './src/routes/viviendas.js';
 import guardadosRouter from './src/routes/guardados.js';
 import comparadorRouter from './src/routes/comparador.js';
 import alertasRouter from './src/routes/alertas.js';
@@ -32,18 +37,21 @@ const PORT = Number(process.env.PORT) || 3000;
 // Confía en el primer proxy (Render, Vercel, Cloud Run) para rate limit por IP real
 app.set('trust proxy', 1);
 
-// Seguridad HTTP con Helmet y CSP compatible con Google Fonts, Unsplash y SVG
+// Cookie parser para JWT en cookies httpOnly
+app.use(cookieParser());
+
+// Seguridad HTTP con Helmet y CSP compatible con Google Fonts, Unsplash, Cloudinary, Leaflet y OSM
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
         scriptSrcAttr: ["'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        imgSrc: ["'self'", 'data:', 'https://images.unsplash.com'],
-        connectSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https://images.unsplash.com', 'https://res.cloudinary.com', 'https://*.tile.openstreetmap.org', 'https://*.openstreetmap.org', 'https://unpkg.com'],
+        connectSrc: ["'self'", 'https://api.cloudinary.com'],
         objectSrc: ["'none'"],
         frameAncestors: ["'self'", 'https://*.google.com', 'https://aistudio.google.com'],
         upgradeInsecureRequests: null
@@ -72,8 +80,9 @@ app.use(
       }
       return callback(null, false);
     },
-    methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-Sesion-Id']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Sesion-Id'],
+    credentials: true
   })
 );
 
@@ -102,8 +111,41 @@ app.get('/healthz', (_req, res) => {
   res.status(200).json({ status: 'ok', uptime: process.uptime() });
 });
 
+// Endpoint temporal de diagnóstico
+app.get('/api/diagnostico', async (_req, res) => {
+  try {
+    const db = await checkDbHealth();
+    if (!db.ok || db.mode === 'memory') {
+      return res.json({
+        ok: true,
+        modo: 'memoria',
+        tablas: ['viviendas', 'usuarios', 'puntos_interes'],
+        conteo_viviendas: 20,
+        conteo_inmuebles: 0,
+        primera_vivienda: null
+      });
+    }
+    const tablas = await query("SELECT table_name FROM information_schema.tables WHERE table_schema='public'");
+    const conteoV = await query("SELECT COUNT(*) FROM viviendas");
+    const primeraV = await query("SELECT id, titulo, operacion FROM viviendas LIMIT 1");
+    return res.json({
+      ok: true,
+      tablas: tablas.rows,
+      conteo_viviendas: Number(conteoV.rows[0]?.count || 0),
+      conteo_inmuebles: 0,
+      primera_vivienda: primeraV.rows[0] || null
+    });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // Rutas REST de la plataforma
-app.use('/api/inmuebles', inmueblesRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/cloudinary', cloudinaryRouter);
+app.use('/api/puntos-interes', puntosInteresRouter);
+app.use('/api/viviendas', viviendasRouter);
+app.use('/api/inmuebles', viviendasRouter);
 app.use('/api/guardados', guardadosRouter);
 app.use('/api/comparador', comparadorRouter);
 app.use('/api/alertas', alertasRouter);

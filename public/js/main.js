@@ -75,7 +75,7 @@ async function initIndexPage() {
   hydrateFiltersFromURL();
 
   if (mapContainer) {
-    mapContainer.innerHTML = generateBogotaMapSVG();
+    initBogotaLeafletMap();
   }
 
   let activeRequestId = 0;
@@ -120,7 +120,7 @@ async function initIndexPage() {
       gridContainer.innerHTML = items.map(renderPropertyCardHTML).join('');
     }
 
-    renderMapPinsLayer(items);
+    updateMapMarkers(items);
   }
 
   async function fetchAndRenderResults() {
@@ -132,10 +132,14 @@ async function initIndexPage() {
 
     try {
       const qs = buildInmueblesQueryParams(AppState.filtros, AppState.orden).toString();
-      const data = await apiFetch(`/api/inmuebles${qs ? `?${qs}` : ''}`);
+      const data = await apiFetch(`/api/viviendas${qs ? `?${qs}` : ''}`);
       if (reqId !== activeRequestId) return;
 
-      AppState.resultados = Array.isArray(data.inmuebles) ? data.inmuebles : [];
+      const viviendas = Array.isArray(data.data) ? data.data : (Array.isArray(data.viviendas) ? data.viviendas : []);
+      if (!viviendas || viviendas.length === 0) {
+        console.error('[DEBUG] Respuesta completa de /api/viviendas:', data);
+      }
+      AppState.resultados = viviendas;
       AppState.totalResultados = Number(data.total ?? AppState.resultados.length);
       cacheInmuebles(AppState.resultados);
 
@@ -152,7 +156,7 @@ async function initIndexPage() {
         'No pudimos cargar los inmuebles, intenta de nuevo',
         'window.retryCurrentLoad()'
       );
-      renderMapPinsLayer([]);
+      updateMapMarkers([]);
     }
   }
 
@@ -516,8 +520,7 @@ async function initPropertyDetailPage() {
 
   const detailMap = document.getElementById('detail-map-canvas');
   if (detailMap) {
-    detailMap.innerHTML = generateBogotaMapSVG();
-    renderMapPinsLayer([item]);
+    initPropertyDetailLeafletMap(item);
   }
 
   const btnFav = document.getElementById('btn-detail-fav');

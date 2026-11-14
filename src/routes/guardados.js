@@ -1,14 +1,15 @@
 /**
  * HABITABOGOTÁ — /src/routes/guardados.js
- * Favoritos persistidos en Postgres por identificador de sesión (X-Sesion-Id).
+ * Favoritos persistidos por usuario autenticado.
  */
 
 import { Router } from 'express';
 import { z } from 'zod';
 import { isDatabaseConfigured, query } from '../db.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
-import { requireSessionId, validateBody, validateParams } from '../middleware/validate.js';
-import { getInmueblesByIds } from '../services/inmueblesQuery.js';
+import { optionalAuth, requireAuth } from '../middleware/auth.js';
+import { validateBody, validateParams } from '../middleware/validate.js';
+import { getViviendasByIds } from '../services/viviendasQuery.js';
 import { memoryStore } from '../services/memoryStore.js';
 
 const router = Router();
@@ -21,28 +22,31 @@ const paramSchema = z.object({
   inmuebleId: z.coerce.number().int().positive()
 });
 
-async function fetchSessionSaved(sesionId) {
+async function fetchUserSaved(userId) {
   let ids;
   if (!isDatabaseConfigured()) {
-    ids = memoryStore.getGuardadosIds(sesionId);
+    ids = memoryStore.getGuardadosIds(userId);
   } else {
     const res = await query(
-      'SELECT inmueble_id FROM guardados WHERE sesion_id = $1 ORDER BY creado_en DESC',
-      [sesionId]
+      'SELECT vivienda_id FROM guardados WHERE usuario_id = $1 ORDER BY creado_en DESC',
+      [userId]
     );
-    ids = res.rows.map((r) => Number(r.inmueble_id));
+    ids = res.rows.map((r) => Number(r.vivienda_id));
   }
-  const inmuebles = await getInmueblesByIds(ids);
+  const inmuebles = await getViviendasByIds(ids);
   return { ids, inmuebles };
 }
 
-router.use(requireSessionId);
+router.use(optionalAuth);
 
 // GET /api/guardados
 router.get(
   '/',
   asyncHandler(async (req, res) => {
-    const data = await fetchSessionSaved(req.sesionId);
+    if (!req.usuario) {
+      return res.json({ ids: [], inmuebles: [] });
+    }
+    const data = await fetchUserSaved(req.usuario.id);
     return res.json(data);
   })
 );
@@ -50,30 +54,32 @@ router.get(
 // POST /api/guardados
 router.post(
   '/',
+  requireAuth,
   validateBody(bodySchema),
   asyncHandler(async (req, res) => {
     const { inmueble_id } = req.validatedBody;
+    const userId = req.usuario.id;
 
     if (!isDatabaseConfigured()) {
-      if (!memoryStore.getInmuebleById(inmueble_id)) {
-        throw new AppError('El inmueble no existe.', 404, 'PROPERTY_NOT_FOUND');
+      if (!memoryStore.getViviendaById(inmueble_id)) {
+        throw new AppError('La vivienda no existe.', 404, 'PROPERTY_NOT_FOUND');
       }
-      memoryStore.addGuardado(req.sesionId, inmueble_id);
-      const data = await fetchSessionSaved(req.sesionId);
+      memoryStore.addGuardado(userId, inmueble_id);
+      const data = await fetchUserSaved(userId);
       return res.status(201).json({ ok: true, ...data });
     }
 
-    const exists = await query('SELECT id FROM inmuebles WHERE id = $1', [inmueble_id]);
+    const exists = await query('SELECT id FROM viviendas WHERE id = $1', [inmueble_id]);
     if (!exists.rows.length) {
-      throw new AppError('El inmueble no existe.', 404, 'PROPERTY_NOT_FOUND');
+      throw new AppError('La vivienda no existe.', 404, 'PROPERTY_NOT_FOUND');
     }
 
     await query(
-      'INSERT INTO guardados (sesion_id, inmueble_id) VALUES ($1, $2) ON CONFLICT (sesion_id, inmueble_id) DO NOTHING',
-      [req.sesionId, inmueble_id]
+      'INSERT INTO guardados (usuario_id, vivienda_id) VALUES ($1, $2) ON CONFLICT (usuario_id, vivienda_id) DO NOTHING',
+      [userId, inmueble_id]
     );
 
-    const data = await fetchSessionSaved(req.sesionId);
+    const data = await fetchUserSaved(userId);
     return res.status(201).json({ ok: true, ...data });
   })
 );
@@ -81,20 +87,24 @@ router.post(
 // DELETE /api/guardados/:inmuebleId
 router.delete(
   '/:inmuebleId',
+  requireAuth,
   validateParams(paramSchema),
   asyncHandler(async (req, res) => {
+    const userId = req.usuario.id;
+    const viviendaId = req.validatedParams.inmuebleId;
+
     if (!isDatabaseConfigured()) {
-      memoryStore.removeGuardado(req.sesionId, req.validatedParams.inmuebleId);
-      const data = await fetchSessionSaved(req.sesionId);
+      memoryStore.removeGuardado(userId, viviendaId);
+      const data = await fetchUserSaved(userId);
       return res.json({ ok: true, ...data });
     }
 
     await query(
-      'DELETE FROM guardados WHERE sesion_id = $1 AND inmueble_id = $2',
-      [req.sesionId, req.validatedParams.inmuebleId]
+      'DELETE FROM guardados WHERE usuario_id = $1 AND vivienda_id = $2',
+      [userId, viviendaId]
     );
 
-    const data = await fetchSessionSaved(req.sesionId);
+    const data = await fetchUserSaved(userId);
     return res.json({ ok: true, ...data });
   })
 );

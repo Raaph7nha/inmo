@@ -11,6 +11,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Fraunces:ital,opsz,wght@0,9..144,600..800;1,9..144,400;1,9..144,700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
 
+  <!-- Leaflet & MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin=""/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin=""/>
+
+  <!-- Leaflet & MarkerCluster JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
+
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/layout.css">
@@ -19,6 +28,7 @@
   <link rel="stylesheet" href="/css/responsive.css">
 
   <script defer src="/js/state.js"></script>
+  <script defer src="/js/auth.js"></script>
   <script defer src="/js/filters.js"></script>
   <script defer src="/js/render.js"></script>
   <script defer src="/js/map.js"></script>
@@ -55,15 +65,26 @@
         <a href="/ayuda.html" class="nav-link">Requisitos & Ley</a>
       </nav>
 
-      <div class="header__actions">
-        <div class="user-badge" title="Sesión activa como Valeria R.">
-          <div class="user-badge__avatar" aria-hidden="true">VR</div>
-          <span>Valeria R.</span>
+      <div class="header__actions" id="header-user-zone">
+        <button id="btn-entrar" class="btn-entrar" style="display:none" onclick="abrirModalLogin()">
+          <span>Entrar</span>
+        </button>
+
+        <div id="usuario-dropdown" class="usuario-dropdown" style="display:none">
+          <button class="usuario-trigger" onclick="toggleDropdownUsuario()">
+            <div class="usuario-avatar" id="usuario-avatar">
+              <span id="usuario-iniciales">??</span>
+            </div>
+            <span id="usuario-nombre" class="usuario-nombre-texto"></span>
+            <svg class="icon icon--sm" aria-hidden="true"><use href="/assets/icons.svg#icon-chevron-down"></use></svg>
+          </button>
+          <div class="dropdown-menu" id="dropdown-menu-usuario" style="display:none;">
+            <a href="/publicar.html">Publicar vivienda</a>
+            <a href="/guardados.html">Mis Guardados</a>
+            <a href="/perfil.html">Mi Perfil</a>
+            <button onclick="HabiAuth.logout()">Cerrar sesión</button>
+          </div>
         </div>
-        <a href="/index.html" class="btn btn--secondary" style="padding: 6px 14px; font-size: var(--text-xs);">
-          <svg class="icon icon--sm" aria-hidden="true"><use href="/assets/icons.svg#icon-arrow-left"></use></svg>
-          <span>Volver al catálogo</span>
-        </a>
       </div>
     </div>
   </header>

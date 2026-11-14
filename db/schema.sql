@@ -1,10 +1,8 @@
 -- ============================================================================
--- HABITABOGOTÁ — Esquema Relacional PostgreSQL (Neon)
--- Incluye tablas, restricciones CHECK, columna calculada, vista e índices
+-- HABITABOGOTÁ — Esquema Relacional PostgreSQL (Neon) con Usuarios, Viviendas y Cloudinary
 -- ============================================================================
 
--- Limpieza opcional en orden inverso para recreación limpia si se requiere
-DROP VIEW IF EXISTS vista_inmuebles_resumen;
+DROP VIEW IF EXISTS vista_viviendas_resumen;
 DROP TABLE IF EXISTS chat_mensajes CASCADE;
 DROP TABLE IF EXISTS mensajes_soporte CASCADE;
 DROP TABLE IF EXISTS alertas CASCADE;
@@ -12,142 +10,149 @@ DROP TABLE IF EXISTS comparador CASCADE;
 DROP TABLE IF EXISTS guardados CASCADE;
 DROP TABLE IF EXISTS sesiones CASCADE;
 DROP TABLE IF EXISTS puntos_interes CASCADE;
-DROP TABLE IF EXISTS imagenes CASCADE;
-DROP TABLE IF EXISTS inmuebles CASCADE;
+DROP TABLE IF EXISTS imagenes_vivienda CASCADE;
+DROP TABLE IF EXISTS imagenes_huerfanas CASCADE;
+DROP TABLE IF EXISTS viviendas CASCADE;
+DROP TABLE IF EXISTS usuarios CASCADE;
 
--- 1. Catálogo principal de inmuebles en Bogotá
-CREATE TABLE inmuebles (
+-- 1. Usuarios con JWT y roles
+CREATE TABLE usuarios (
   id SERIAL PRIMARY KEY,
-  titulo TEXT NOT NULL,
-  descripcion TEXT NOT NULL,
-  tipo TEXT NOT NULL CHECK (tipo IN ('casa', 'apartamento', 'local')),
-  operacion TEXT NOT NULL CHECK (operacion IN ('arriendo', 'venta')),
-  barrio TEXT NOT NULL,
-  localidad TEXT NOT NULL,
-  direccion_aprox TEXT NOT NULL,
-  precio NUMERIC(14, 2) NOT NULL CHECK (precio >= 0),
-  administracion NUMERIC(14, 2) NOT NULL DEFAULT 0 CHECK (administracion >= 0),
-  -- Columna calculada persistida: en arriendo suma canon + administración
-  costo_total NUMERIC(14, 2) GENERATED ALWAYS AS (
+  nombre VARCHAR(120) NOT NULL,
+  correo VARCHAR(255) UNIQUE NOT NULL,
+  contrasena_hash TEXT NOT NULL,
+  rol VARCHAR(20) DEFAULT 'comprador' CHECK (rol IN ('comprador', 'arrendador', 'admin')),
+  avatar_url TEXT,
+  verificado BOOLEAN DEFAULT FALSE,
+  creado_en TIMESTAMPTZ DEFAULT now(),
+  actualizado_en TIMESTAMPTZ DEFAULT now()
+);
+
+-- 2. Viviendas (tabla central, reemplaza inmuebles)
+CREATE TABLE viviendas (
+  id SERIAL PRIMARY KEY,
+  propietario_id INT REFERENCES usuarios(id) ON DELETE SET NULL,
+  titulo VARCHAR(200) NOT NULL,
+  descripcion TEXT,
+  tipo VARCHAR(20) CHECK (tipo IN ('casa', 'apartamento', 'local', 'otro')),
+  operacion VARCHAR(20) CHECK (operacion IN ('arriendo', 'venta')),
+  barrio VARCHAR(100),
+  localidad VARCHAR(100),
+  ciudad VARCHAR(80) DEFAULT 'Bogotá',
+  direccion_aprox VARCHAR(200),
+  precio NUMERIC(14,2) NOT NULL CHECK (precio >= 0),
+  administracion NUMERIC(14,2) DEFAULT 0 CHECK (administracion >= 0),
+  costo_total NUMERIC(14,2) GENERATED ALWAYS AS (
     CASE WHEN operacion = 'arriendo' THEN precio + administracion ELSE precio END
   ) STORED,
-  habitaciones INT NOT NULL DEFAULT 0 CHECK (habitaciones >= 0),
-  banos INT NOT NULL DEFAULT 1 CHECK (banos >= 0),
-  area_m2 NUMERIC(10, 2) NOT NULL CHECK (area_m2 > 0),
-  mascotas BOOLEAN NOT NULL DEFAULT FALSE,
-  parqueadero BOOLEAN NOT NULL DEFAULT FALSE,
-  balcon BOOLEAN NOT NULL DEFAULT FALSE,
-  gimnasio BOOLEAN NOT NULL DEFAULT FALSE,
-  piscina BOOLEAN NOT NULL DEFAULT FALSE,
-  porteria BOOLEAN NOT NULL DEFAULT FALSE,
-  tour_3d BOOLEAN NOT NULL DEFAULT FALSE,
-  requisitos TEXT[] NOT NULL DEFAULT '{}',
-  deposito NUMERIC(14, 2) NULL CHECK (deposito IS NULL OR deposito >= 0),
-  -- Coordenadas porcentuales del mapa vectorial ilustrado (0-100)
-  pos_x NUMERIC(5, 2) NOT NULL CHECK (pos_x >= 0 AND pos_x <= 100),
-  pos_y NUMERIC(5, 2) NOT NULL CHECK (pos_y >= 0 AND pos_y <= 100),
-  -- Coordenadas geográficas reales en Bogotá
-  lat NUMERIC(9, 6),
-  lng NUMERIC(9, 6),
-  destacado BOOLEAN NOT NULL DEFAULT FALSE,
-  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
-  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+  deposito NUMERIC(14,2) CHECK (deposito IS NULL OR deposito >= 0),
+  habitaciones INT CHECK (habitaciones >= 0),
+  banos INT CHECK (banos >= 0),
+  area_m2 NUMERIC(8,2) CHECK (area_m2 > 0),
+  mascotas BOOLEAN DEFAULT FALSE,
+  parqueadero BOOLEAN DEFAULT FALSE,
+  balcon BOOLEAN DEFAULT FALSE,
+  gimnasio BOOLEAN DEFAULT FALSE,
+  piscina BOOLEAN DEFAULT FALSE,
+  porteria BOOLEAN DEFAULT FALSE,
+  tour_3d BOOLEAN DEFAULT FALSE,
+  requisitos TEXT[],
+  lat NUMERIC(10,7) NOT NULL,
+  lng NUMERIC(10,7) NOT NULL,
+  pos_x NUMERIC(5,2),
+  pos_y NUMERIC(5,2),
+  destacado BOOLEAN DEFAULT FALSE,
+  activo BOOLEAN DEFAULT TRUE,
+  creado_en TIMESTAMPTZ DEFAULT now(),
+  actualizado_en TIMESTAMPTZ DEFAULT now()
 );
 
--- Vista de apoyo con costo_total explícito y cálculo consolidado
-CREATE OR REPLACE VIEW vista_inmuebles_resumen AS
-SELECT
-  i.*,
-  CASE WHEN i.operacion = 'arriendo' THEN (i.precio + i.administracion) ELSE i.precio END AS costo_mensual_real
-FROM inmuebles i;
-
--- 2. Galería de imágenes por inmueble
-CREATE TABLE imagenes (
+-- 3. Imágenes de vivienda con Cloudinary
+CREATE TABLE imagenes_vivienda (
   id SERIAL PRIMARY KEY,
-  inmueble_id INT NOT NULL REFERENCES inmuebles(id) ON DELETE CASCADE,
+  vivienda_id INT REFERENCES viviendas(id) ON DELETE CASCADE,
+  cloudinary_public_id TEXT NOT NULL,
   url TEXT NOT NULL,
-  orden INT NOT NULL DEFAULT 0 CHECK (orden >= 0)
+  url_thumb TEXT,
+  orden INT DEFAULT 0
 );
 
--- 3. Puntos de interés cercanos (transporte, supermercados y zonas de riesgo)
+-- 4. Imágenes huérfanas (fallo de borrado en Cloudinary)
+CREATE TABLE imagenes_huerfanas (
+  id SERIAL PRIMARY KEY,
+  cloudinary_public_id TEXT NOT NULL,
+  creado_en TIMESTAMPTZ DEFAULT now()
+);
+
+-- 5. Puntos de interés cercanos con coordenadas geográficas reales
 CREATE TABLE puntos_interes (
   id SERIAL PRIMARY KEY,
-  inmueble_id INT NOT NULL REFERENCES inmuebles(id) ON DELETE CASCADE,
-  categoria TEXT NOT NULL CHECK (categoria IN ('transporte', 'supermercado', 'zona_riesgo')),
-  nombre TEXT NOT NULL,
-  detalle TEXT NULL,
-  distancia_cuadras INT NOT NULL CHECK (distancia_cuadras >= 0)
+  vivienda_id INT REFERENCES viviendas(id) ON DELETE CASCADE,
+  categoria VARCHAR(30) CHECK (categoria IN ('transporte', 'supermercado', 'zona_riesgo', 'colegio', 'hospital', 'parque')),
+  nombre VARCHAR(120),
+  lat NUMERIC(10,7),
+  lng NUMERIC(10,7),
+  distancia_cuadras INT CHECK (distancia_cuadras >= 0)
 );
 
--- 4. Sesiones anónimas de usuario (UUID generado en el navegador)
-CREATE TABLE sesiones (
-  id UUID PRIMARY KEY,
-  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- 5. Inmuebles guardados (Favoritos por sesión)
+-- 6. Guardados (Favoritos por usuario)
 CREATE TABLE guardados (
-  sesion_id UUID NOT NULL REFERENCES sesiones(id) ON DELETE CASCADE,
-  inmueble_id INT NOT NULL REFERENCES inmuebles(id) ON DELETE CASCADE,
-  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (sesion_id, inmueble_id)
+  usuario_id INT REFERENCES usuarios(id) ON DELETE CASCADE,
+  vivienda_id INT REFERENCES viviendas(id) ON DELETE CASCADE,
+  creado_en TIMESTAMPTZ DEFAULT now(),
+  PRIMARY KEY (usuario_id, vivienda_id)
 );
 
--- 6. Comparador de inmuebles (máximo 3 por sesión validado en API)
+-- 7. Comparador (máximo 3 por usuario)
 CREATE TABLE comparador (
-  sesion_id UUID NOT NULL REFERENCES sesiones(id) ON DELETE CASCADE,
-  inmueble_id INT NOT NULL REFERENCES inmuebles(id) ON DELETE CASCADE,
-  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (sesion_id, inmueble_id)
+  usuario_id INT REFERENCES usuarios(id) ON DELETE CASCADE,
+  vivienda_id INT REFERENCES viviendas(id) ON DELETE CASCADE,
+  creado_en TIMESTAMPTZ DEFAULT now(),
+  PRIMARY KEY (usuario_id, vivienda_id)
 );
 
--- 7. Alertas de búsqueda por correo electrónico
+-- 8. Alertas de búsqueda por correo
 CREATE TABLE alertas (
   id SERIAL PRIMARY KEY,
-  sesion_id UUID NULL REFERENCES sesiones(id) ON DELETE SET NULL,
-  correo TEXT NOT NULL,
-  filtros JSONB NOT NULL DEFAULT '{}'::jsonb,
-  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+  usuario_id INT REFERENCES usuarios(id) ON DELETE CASCADE,
+  correo VARCHAR(255) NOT NULL,
+  filtros JSONB DEFAULT '{}'::jsonb,
+  creado_en TIMESTAMPTZ DEFAULT now()
 );
 
--- 8. Mensajes del formulario de soporte y asesoría legal
+-- 9. Mensajes de soporte y asesoría legal
 CREATE TABLE mensajes_soporte (
   id SERIAL PRIMARY KEY,
-  nombre TEXT NOT NULL,
-  correo TEXT NOT NULL,
+  nombre VARCHAR(120) NOT NULL,
+  correo VARCHAR(255) NOT NULL,
   mensaje TEXT NOT NULL,
-  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+  creado_en TIMESTAMPTZ DEFAULT now()
 );
 
--- 9. Historial persistente de conversación con el asistente Habi
+-- 10. Historial de chat con el asistente Habi
 CREATE TABLE chat_mensajes (
   id SERIAL PRIMARY KEY,
-  sesion_id UUID NOT NULL REFERENCES sesiones(id) ON DELETE CASCADE,
-  rol TEXT NOT NULL CHECK (rol IN ('user', 'assistant')),
+  usuario_id INT REFERENCES usuarios(id) ON DELETE CASCADE,
+  rol VARCHAR(20) CHECK (rol IN ('user', 'assistant')),
   contenido TEXT NOT NULL,
-  inmuebles_ids INT[] NOT NULL DEFAULT '{}',
-  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+  viviendas_ids INT[] DEFAULT '{}',
+  creado_en TIMESTAMPTZ DEFAULT now()
 );
 
--- ============================================================================
--- ÍNDICES PARA CONSULTAS Y FILTROS DE ALTO RENDIMIENTO
--- ============================================================================
-CREATE INDEX idx_inmuebles_barrio ON inmuebles (barrio);
-CREATE INDEX idx_inmuebles_localidad ON inmuebles (localidad);
-CREATE INDEX idx_inmuebles_precio ON inmuebles (precio);
-CREATE INDEX idx_inmuebles_costo_total ON inmuebles (costo_total);
-CREATE INDEX idx_inmuebles_tipo ON inmuebles (tipo);
-CREATE INDEX idx_inmuebles_operacion ON inmuebles (operacion);
-CREATE INDEX idx_inmuebles_habitaciones ON inmuebles (habitaciones);
+-- VISTA DE RESUMEN
+CREATE OR REPLACE VIEW vista_viviendas_resumen AS
+SELECT
+  v.*,
+  CASE WHEN v.operacion = 'arriendo' THEN (v.precio + v.administracion) ELSE v.precio END AS costo_mensual_real
+FROM viviendas v;
 
--- Índices booleanos de filtros facetados
-CREATE INDEX idx_inmuebles_filtros_bool ON inmuebles (
-  mascotas, parqueadero, balcon, gimnasio, piscina, porteria, tour_3d
-);
-
--- Índices relacionales y de sesión
-CREATE INDEX idx_imagenes_inmueble ON imagenes (inmueble_id, orden);
-CREATE INDEX idx_poi_inmueble_cat ON puntos_interes (inmueble_id, categoria);
-CREATE INDEX idx_guardados_sesion ON guardados (sesion_id, creado_en DESC);
-CREATE INDEX idx_comparador_sesion ON comparador (sesion_id, creado_en ASC);
-CREATE INDEX idx_chat_sesion_fecha ON chat_mensajes (sesion_id, creado_en DESC);
+-- ÍNDICES DE ALTO RENDIMIENTO
+CREATE INDEX idx_viviendas_operacion ON viviendas (operacion);
+CREATE INDEX idx_viviendas_tipo ON viviendas (tipo);
+CREATE INDEX idx_viviendas_barrio ON viviendas (barrio);
+CREATE INDEX idx_viviendas_precio ON viviendas (precio);
+CREATE INDEX idx_viviendas_mascotas ON viviendas (mascotas);
+CREATE INDEX idx_viviendas_parqueadero ON viviendas (parqueadero);
+CREATE INDEX idx_viviendas_lat_lng ON viviendas (lat, lng);
+CREATE INDEX idx_imagenes_vivienda ON imagenes_vivienda (vivienda_id, orden);
+CREATE INDEX idx_puntos_interes_cat ON puntos_interes (vivienda_id, categoria);

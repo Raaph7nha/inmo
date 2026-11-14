@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Publicar Inmueble — HabitaBogotá</title>
+  <meta name="description" content="Publica tu inmueble en Bogotá con desglose transparente de costos y alcance verificado.">
+  
+  <!-- Tipografías editoriales -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Fraunces:ital,opsz,wght@0,9..144,600..800;1,9..144,400;1,9..144,700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+
+  <!-- Estilos del sistema -->
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/pages.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+
+  <script defer src="/js/state.js"></script>
+  <script defer src="/js/auth.js"></script>
+  <script defer src="/js/upload-imagen.js"></script>
+  <script defer src="/js/render.js"></script>
+  <script defer src="/js/modal.js"></script>
+  <script defer src="/js/main.js"></script>
+</head>
+<body>
+
+  <!-- Header Editorial -->
+  <header class="header" role="banner">
+    <div class="container header__inner">
+      <a href="/index.html" class="brand" aria-label="HabitaBogotá Inicio">
+        <div class="brand__emblem" aria-hidden="true">
+          <svg class="icon icon--sm" viewBox="0 0 24 24" style="stroke: #fff;"><use href="/assets/icons.svg#icon-building"></use></svg>
+        </div>
+        <div class="brand__text">Habita<span>Bogotá</span></div>
+        <span class="brand__tag">PUBLICAR · COP</span>
+      </a>
+
+      <nav class="nav-menu" role="navigation" aria-label="Navegación principal">
+        <a href="/index.html" class="nav-link">Explorar Inmuebles</a>
+        <a href="/guardados.html" class="nav-link">Mis Guardados</a>
+        <a href="/comparador.html" class="nav-link">Comparador</a>
+        <a href="/ayuda.html" class="nav-link">Requisitos & Ley</a>
+      </nav>
+
+      <div class="header__actions" id="header-user-zone">
+        <!-- Renderizado por auth.js -->
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="max-width: 900px; padding: var(--space-6) var(--space-4);" role="main">
+    <div style="margin-bottom: var(--space-6);">
+      <span class="stamp-seal stamp-seal--featured" style="margin-bottom: 8px;">Portal de Arrendadores & Propietarios</span>
+      <h1 style="font-family: var(--font-serif); font-size: 2.2rem; font-weight: 800; color: var(--color-ink);">Publica tu Inmueble con Transparencia</h1>
+      <p style="color: var(--color-ink-muted); font-size: var(--text-md); margin-top: 4px;">
+        En HabitaBogotá publicamos el costo real consolidado (Arriendo + Administración) según la Ley 820.
+      </p>
+    </div>
+
+    <!-- Formulario de Publicación -->
+    <form id="form-publicar-vivienda" style="background: var(--color-sand); border: 2px solid var(--color-ink); border-radius: var(--radius-card); padding: var(--space-6); box-shadow: var(--shadow-offset);">
+      
+      <div style="display: flex; flex-direction: column; gap: var(--space-5);">
+        
+        <!-- Sección 1: Información básica -->
+        <div>
+          <h2 style="font-family: var(--font-serif); font-size: 1.25rem; font-weight: 700; margin-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); padding-bottom: 8px;">
+            1. Información General del Inmueble
+          </h2>
+          
+          <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-3);">
+            <div>
+              <label for="pub-titulo" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Título del Inmueble *</label>
+              <input type="text" id="pub-titulo" class="hero-search-input" style="width: 100%; height: 42px;" placeholder="Ej: Espectacular Apartaestudio en Chicó Norte" required>
+            </div>
+            <div>
+              <label for="pub-operacion" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Operación *</label>
+              <select id="pub-operacion" class="hero-search-input" style="width: 100%; height: 42px;" required>
+                <option value="arriendo">Arriendo</option>
+                <option value="venta">Venta</option>
+              </select>
+            </div>
+            <div>
+              <label for="pub-tipo" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Tipo *</label>
+              <select id="pub-tipo" class="hero-search-input" style="width: 100%; height: 42px;" required>
+                <option value="apartamento">Apartamento</option>
+                <option value="casa">Casa</option>
+                <option value="local">Local comercial</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; gap: var(--space-3); margin-bottom: var(--space-3);">
+            <div>
+              <label for="pub-barrio" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Barrio *</label>
+              <input type="text" id="pub-barrio" class="hero-search-input" style="width: 100%; height: 42px;" placeholder="Ej: Chapinero Alto" required>
+            </div>
+            <div>
+              <label for="pub-localidad" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Localidad *</label>
+              <input type="text" id="pub-localidad" class="hero-search-input" style="width: 100%; height: 42px;" placeholder="Ej: Chapinero" required>
+            </div>
+            <div>
+              <label for="pub-direccion" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Dirección aproximada *</label>
+              <input type="text" id="pub-direccion" class="hero-search-input" style="width: 100%; height: 42px;" placeholder="Ej: Cra. 7 # 54-12" required>
+            </div>
+          </div>
+
+          <div>
+            <label for="pub-descripcion" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Descripción detallada *</label>
+            <textarea id="pub-descripcion" class="hero-search-input" style="width: 100%; height: 100px; padding: 10px;" placeholder="Describe la iluminación, acabados, cercanía a universidades y zonas de interés..." required></textarea>
+          </div>
+        </div>
+
+        <!-- Sección 2: Costos transparentes en COP -->
+        <div>
+          <h2 style="font-family: var(--font-serif); font-size: 1.25rem; font-weight: 700; margin-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); padding-bottom: 8px;">
+            2. Costos Transparentes (COP)
+          </h2>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-3);">
+            <div>
+              <label for="pub-precio" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Canon o Valor (COP) *</label>
+              <input type="number" id="pub-precio" class="hero-search-input" style="width: 100%; height: 42px;" placeholder="Ej: 2200000" step="50000" required>
+            </div>
+            <div>
+              <label for="pub-admin" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Administración (COP)</label>
+              <input type="number" id="pub-admin" class="hero-search-input" style="width: 100%; height: 42px;" placeholder="Ej: 350000" step="10000" value="0">
+            </div>
+            <div>
+              <label for="pub-deposito" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Depósito garantía (COP)</label>
+              <input type="number" id="pub-deposito" class="hero-search-input" style="width: 100%; height: 42px;" placeholder="Opcional" step="50000">
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección 3: Especificaciones y Comodidades -->
+        <div>
+          <h2 style="font-family: var(--font-serif); font-size: 1.25rem; font-weight: 700; margin-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); padding-bottom: 8px;">
+            3. Especificaciones y Comodidades
+          </h2>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-4);">
+            <div>
+              <label for="pub-habitaciones" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Habitaciones *</label>
+              <input type="number" id="pub-habitaciones" class="hero-search-input" style="width: 100%; height: 42px;" min="0" max="15" value="1" required>
+            </div>
+            <div>
+              <label for="pub-banos" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Baños *</label>
+              <input type="number" id="pub-banos" class="hero-search-input" style="width: 100%; height: 42px;" min="1" max="15" value="1" required>
+            </div>
+            <div>
+              <label for="pub-area" style="display: block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Área Privada (m²) *</label>
+              <input type="number" id="pub-area" class="hero-search-input" style="width: 100%; height: 42px;" min="5" max="5000" placeholder="Ej: 54" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-3);">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); cursor: pointer;">
+              <input type="checkbox" id="pub-mascotas" style="width: 18px; height: 18px; accent-color: var(--color-terracotta);">
+              <span>Mascotas permitidas</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); cursor: pointer;">
+              <input type="checkbox" id="pub-parqueadero" style="width: 18px; height: 18px; accent-color: var(--color-terracotta);">
+              <span>Parqueadero propio</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); cursor: pointer;">
+              <input type="checkbox" id="pub-balcon" style="width: 18px; height: 18px; accent-color: var(--color-terracotta);">
+              <span>Balcón / Terraza</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); cursor: pointer;">
+              <input type="checkbox" id="pub-gimnasio" style="width: 18px; height: 18px; accent-color: var(--color-terracotta);">
+              <span>Gimnasio</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); cursor: pointer;">
+              <input type="checkbox" id="pub-piscina" style="width: 18px; height: 18px; accent-color: var(--color-terracotta);">
+              <span>Piscina</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); cursor: pointer;">
+              <input type="checkbox" id="pub-porteria" style="width: 18px; height: 18px; accent-color: var(--color-terracotta);">
+              <span>Portería 24/7</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); cursor: pointer;">
+              <input type="checkbox" id="pub-tour3d" style="width: 18px; height: 18px; accent-color: var(--color-terracotta);">
+              <span>Tour Virtual 3D</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Sección 4: Fotografías con Cloudinary -->
+        <div>
+          <h2 style="font-family: var(--font-serif); font-size: 1.25rem; font-weight: 700; margin-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); padding-bottom: 8px;">
+            4. Fotografías (Cloudinary)
+          </h2>
+          <p style="font-size: var(--text-xs); color: var(--color-ink-muted); margin-bottom: var(--space-3);">
+            Sube entre 1 y 10 fotos en alta resolución de los espacios principales.
+          </p>
+
+          <div id="cloudinary-upload-container" style="border: 2px dashed var(--color-ink); border-radius: var(--radius-sm); padding: var(--space-4); text-align: center; background: #fff;">
+            <input type="file" id="cloudinary-file-input" accept="image/*" multiple style="display: none;">
+            <button type="button" class="btn btn--secondary" onclick="document.getElementById('cloudinary-file-input').click();">
+              Seleccionar Fotografías
+            </button>
+            <span style="display: block; font-size: var(--text-xs); color: var(--color-ink-muted); margin-top: 8px;">PNG, JPG o WEBP (máx 10MB c/u)</span>
+          </div>
+
+          <!-- Miniaturas cargadas -->
+          <div id="cloudinary-previews-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; margin-top: var(--space-3);"></div>
+        </div>
+
+        <!-- Sección 5: Ubicación en el Mapa (Leaflet) -->
+        <div>
+          <h2 style="font-family: var(--font-serif); font-size: 1.25rem; font-weight: 700; margin-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); padding-bottom: 8px;">
+            5. Ubicación en el Mapa de Bogotá (Haz clic para ubicar)
+          </h2>
+          <p style="font-size: var(--text-xs); color: var(--color-ink-muted); margin-bottom: var(--space-3);">
+            Haz clic en el mapa para fijar la ubicación exacta del inmueble.
+          </p>
+          <div id="leaflet-picker-map" style="width: 100%; height: 320px; border-radius: var(--radius-sm); border: 2px solid var(--color-ink);"></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-top: var(--space-3);">
+            <div>
+              <label for="pub-lat" style="display: block; font-size: var(--text-xs); font-weight: 700;">Latitud</label>
+              <input type="text" id="pub-lat" class="hero-search-input" style="width: 100%; height: 38px;" value="4.6500" readonly required>
+            </div>
+            <div>
+              <label for="pub-lng" style="display: block; font-size: var(--text-xs); font-weight: 700;">Longitud</label>
+              <input type="text" id="pub-lng" class="hero-search-input" style="width: 100%; height: 38px;" value="-74.0500" readonly required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botón Enviar -->
+        <div style="margin-top: var(--space-4);">
+          <button type="submit" class="btn btn--primary" style="width: 100%; height: 48px; font-size: 1rem;">
+            Publicar Inmueble en HabitaBogotá
+          </button>
+        </div>
+
+      </div>
+    </form>
+  </main>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script defer src="/js/mapa.js"></script>
+</body>
+</html>

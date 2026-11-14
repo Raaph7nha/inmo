@@ -1152,3 +1152,36 @@
   flex-shrink: 0;
 }
 
+/* PROBLEMA 1 — Estilo y robustez del botón "Entrar" y header-acciones */
+.btn-entrar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background-color: var(--color-terracotta, #B4472B);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.btn-entrar:hover {
+  background-color: #923a23;
+  transform: translateY(-1px);
+}
+.btn-entrar:active {
+  transform: translateY(0);
+}
+.header-acciones, .header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  min-width: fit-content;
+}
+

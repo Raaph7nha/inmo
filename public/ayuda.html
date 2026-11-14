@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="/css/responsive.css">
 
   <script defer src="/js/state.js"></script>
+  <script defer src="/js/auth.js"></script>
   <script defer src="/js/filters.js"></script>
   <script defer src="/js/render.js"></script>
   <script defer src="/js/map.js"></script>
@@ -55,10 +56,25 @@
         <a href="/ayuda.html" class="nav-link nav-link--active">Requisitos & Ley</a>
       </nav>
 
-      <div class="header__actions">
-        <div class="user-badge" title="Sesión activa como Valeria R.">
-          <div class="user-badge__avatar" aria-hidden="true">VR</div>
-          <span>Valeria R.</span>
+      <div class="header__actions" id="header-user-zone">
+        <button id="btn-entrar" class="btn-entrar" style="display:none" onclick="abrirModalLogin()">
+          <span>Entrar</span>
+        </button>
+
+        <div id="usuario-dropdown" class="usuario-dropdown" style="display:none">
+          <button class="usuario-trigger" onclick="toggleDropdownUsuario()">
+            <div class="usuario-avatar" id="usuario-avatar">
+              <span id="usuario-iniciales">??</span>
+            </div>
+            <span id="usuario-nombre" class="usuario-nombre-texto"></span>
+            <svg class="icon icon--sm" aria-hidden="true"><use href="/assets/icons.svg#icon-chevron-down"></use></svg>
+          </button>
+          <div class="dropdown-menu" id="dropdown-menu-usuario" style="display:none;">
+            <a href="/publicar.html">Publicar vivienda</a>
+            <a href="/guardados.html">Mis Guardados</a>
+            <a href="/perfil.html">Mi Perfil</a>
+            <button onclick="HabiAuth.logout()">Cerrar sesión</button>
+          </div>
         </div>
       </div>
     </div>

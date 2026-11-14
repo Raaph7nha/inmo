@@ -1,127 +1,187 @@
 /**
  * HABITABOGOTÁ — /public/js/map.js
- * Mapa vectorial SVG ilustrado de la retícula de Bogotá con pines de gota,
- * capas de transporte/riesgo y pines dinámicos desde la API.
+ * Módulo completo de mapas reales con Leaflet + OpenStreetMap + MarkerCluster + Nominatim.
  */
 
-function generateBogotaMapSVG() {
+let globalLeafletMap = null;
+let globalMarkersCluster = null;
+let optionalLayersControl = null;
+let activeLayersGroup = {
+  transporte: null,
+  supermercado: null,
+  zona_riesgo: null
+};
+
+// SVG Pins personalizados con L.divIcon
+function createCustomDivIcon(operacion) {
+  const isRent = operacion === 'arriendo';
+  const bgCol = isRent ? '#B4472B' : '#E0A526';
+  const label = isRent ? 'A' : 'V';
+
+  return L.divIcon({
+    className: 'custom-leaflet-pin',
+    html: `
+      <div style="background: ${bgCol}; width: 36px; height: 44px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 2px solid #fff;">
+        <span style="transform: rotate(45deg); font-family: 'Fraunces', serif; font-size: 15px; font-weight: 800; color: #fff;">${label}</span>
+      </div>
+    `,
+    iconSize: [36, 44],
+    iconPoint: [18, 44],
+    popupAnchor: [0, -42]
+  });
+}
+
+function renderPopupHTML(p) {
+  const total = calculateTotalCost(p);
+  const img = escapeHTML((p.imagenes && p.imagenes[0]) || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80');
+  const titulo = escapeHTML(p.titulo);
+  const barrio = escapeHTML(p.barrio);
+  const isSaved = AppState.guardados.includes(p.id);
+  const c = p.caracteristicas || p;
+
   return `
-    <svg viewBox="0 0 800 520" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0;" aria-hidden="true">
-      <defs>
-        <pattern id="risk-stripe-pattern" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
-          <line x1="0" y1="0" x2="0" y2="8" stroke="#C93B2B" stroke-width="2.5" opacity="0.35" />
-        </pattern>
-      </defs>
+    <div style="width: 240px; font-family: 'DM Sans', sans-serif; color: var(--color-ink);">
+      <div style="border-radius: 6px; overflow: hidden; height: 130px; margin-bottom: 8px; border: 1px solid var(--color-border);">
+        <img src="${img}" alt="${titulo}" style="width: 100%; height: 100%; object-fit: cover;">
+      </div>
+      <div style="font-family: var(--font-serif); font-size: 0.95rem; font-weight: 700; line-height: 1.2; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${titulo}</div>
+      <div style="font-size: 0.75rem; color: var(--color-ink-muted); margin-bottom: 6px;">${barrio} · ${p.habitaciones} hab. · ${p.area_m2} m²</div>
+      <div style="font-family: var(--font-serif); font-size: 1.1rem; font-weight: 800; color: var(--color-moss-dark); margin-bottom: 8px;">${formatCOP(total)}</div>
+      
+      <div style="display: flex; gap: 4px; margin-bottom: 8px; font-size: 0.7rem;">
+        ${c.mascotas ? '<span style="background: #FBECE9; color: #B4472B; padding: 2px 6px; border-radius: 4px; font-weight: 700;">🐾 Mascotas</span>' : ''}
+        ${c.parqueadero ? '<span style="background: var(--color-sand); padding: 2px 6px; border-radius: 4px;">🚗 Parqueadero</span>' : ''}
+        ${c.balcon ? '<span style="background: var(--color-sand); padding: 2px 6px; border-radius: 4px;">🌿 Balcón</span>' : ''}
+      </div>
 
-      <rect width="800" height="520" fill="#E8E0D1" />
-
-      <path d="M 670 0 Q 720 180 690 320 T 710 520 L 800 520 L 800 0 Z" fill="#3F5E4A" opacity="0.22" />
-      <path d="M 700 0 Q 750 200 720 380 L 800 520 L 800 0 Z" fill="#3F5E4A" opacity="0.18" />
-      <text x="730" y="240" font-family="'Fraunces', serif" font-size="13" font-style="italic" fill="#2D4435" font-weight="700" transform="rotate(90, 730, 240)" letter-spacing="0.2em">CERROS ORIENTALES</text>
-
-      <rect x="330" y="220" width="90" height="60" rx="12" fill="#3F5E4A" opacity="0.3" stroke="#3F5E4A" stroke-width="1" />
-      <text x="340" y="255" font-family="'DM Sans', sans-serif" font-size="9" font-weight="700" fill="#2D4435">Parque Simón Bolívar</text>
-
-      <line x1="560" y1="280" x2="540" y2="360" stroke="#3F5E4A" stroke-width="12" stroke-linecap="round" opacity="0.35" />
-      <text x="500" y="325" font-family="'DM Sans', sans-serif" font-size="8" font-weight="700" fill="#2D4435">Park Way</text>
-
-      <line x1="600" y1="120" x2="680" y2="120" stroke="#3F5E4A" stroke-width="8" stroke-linecap="round" opacity="0.3" />
-      <text x="610" y="115" font-family="'DM Sans', sans-serif" font-size="8" font-weight="700" fill="#2D4435">El Virrey</text>
-
-      <line x1="630" y1="0" x2="590" y2="520" stroke="#D3C7B5" stroke-width="6" />
-      <text x="635" y="40" font-family="'DM Sans', sans-serif" font-size="8" font-weight="700" fill="#7E8C9A">Cra. 7ma</text>
-
-      <line x1="490" y1="0" x2="430" y2="520" stroke="#D3C7B5" stroke-width="6" />
-      <text x="495" y="60" font-family="'DM Sans', sans-serif" font-size="8" font-weight="700" fill="#7E8C9A">Av. NQS (Cra. 30)</text>
-
-      <line x1="260" y1="0" x2="190" y2="520" stroke="#D3C7B5" stroke-width="5" />
-      <text x="235" y="480" font-family="'DM Sans', sans-serif" font-size="8" font-weight="700" fill="#7E8C9A">Av. Boyacá</text>
-
-      <line x1="380" y1="0" x2="310" y2="520" stroke="#D3C7B5" stroke-width="4" stroke-dasharray="4 2" />
-      <text x="365" y="80" font-family="'DM Sans', sans-serif" font-size="8" font-weight="700" fill="#7E8C9A">Av. 68</text>
-
-      <line x1="120" y1="80" x2="680" y2="80" stroke="#D3C7B5" stroke-width="3" />
-      <text x="130" y="74" font-family="'DM Sans', sans-serif" font-size="8" font-weight="700" fill="#7E8C9A">Calle 140 (Cedritos)</text>
-
-      <line x1="150" y1="150" x2="680" y2="150" stroke="#D3C7B5" stroke-width="3.5" />
-      <text x="160" y="144" font-family="'DM Sans', sans-serif" font-size="8" font-weight="700" fill="#7E8C9A">Calle 100</text>
-
-      <line x1="180" y1="210" x2="670" y2="210" stroke="#D3C7B5" stroke-width="3" />
-      <text x="190" y="204" font-family="'DM Sans', sans-serif" font-size="8" font-weight="700" fill="#7E8C9A">Calle 72</text>
-
-      <line x1="200" y1="250" x2="660" y2="250" stroke="#D3C7B5" stroke-width="3" />
-      <text x="210" y="244" font-family="'DM Sans', sans-serif" font-size="8" font-weight="700" fill="#7E8C9A">Calle 63 (Chapinero)</text>
-
-      <line x1="210" y1="290" x2="650" y2="290" stroke="#D3C7B5" stroke-width="3" />
-      <text x="220" y="284" font-family="'DM Sans', sans-serif" font-size="8" font-weight="700" fill="#7E8C9A">Calle 53</text>
-
-      <line x1="40" y1="360" x2="630" y2="360" stroke="#B4472B" stroke-width="5" opacity="0.8" />
-      <text x="60" y="352" font-family="'DM Sans', sans-serif" font-size="9" font-weight="800" fill="#8F331C">Av. El Dorado (Calle 26) ✈</text>
-
-      <g id="layer-transmilenio-group">
-        <line x1="630" y1="0" x2="590" y2="520" stroke="#C93B2B" stroke-width="2.5" stroke-dasharray="6 3" />
-        <line x1="490" y1="0" x2="430" y2="520" stroke="#C93B2B" stroke-width="2.5" stroke-dasharray="6 3" />
-        <line x1="40" y1="360" x2="630" y2="360" stroke="#C93B2B" stroke-width="2" stroke-dasharray="6 3" />
-
-        <circle cx="610" cy="250" r="5" fill="#C93B2B" stroke="#FFFFFF" stroke-width="1.5" />
-        <text x="620" y="253" font-family="'DM Sans', sans-serif" font-size="8" font-weight="800" fill="#16202B">Estación Cl. 63</text>
-
-        <circle cx="605" cy="290" r="5" fill="#C93B2B" stroke="#FFFFFF" stroke-width="1.5" />
-        <text x="615" y="293" font-family="'DM Sans', sans-serif" font-size="8" font-weight="800" fill="#16202B">Estación Flores</text>
-
-        <circle cx="585" cy="420" r="5" fill="#C93B2B" stroke="#FFFFFF" stroke-width="1.5" />
-        <text x="595" y="423" font-family="'DM Sans', sans-serif" font-size="8" font-weight="800" fill="#16202B">Estación Las Aguas</text>
-
-        <circle cx="310" cy="360" r="5" fill="#C93B2B" stroke="#FFFFFF" stroke-width="1.5" />
-        <text x="290" y="380" font-family="'DM Sans', sans-serif" font-size="8" font-weight="800" fill="#16202B">Salitre El Greco</text>
-      </g>
-
-      <g id="layer-risk-group">
-        <circle cx="180" cy="410" r="38" fill="url(#risk-stripe-pattern)" stroke="#C93B2B" stroke-width="1.5" stroke-dasharray="3 2" />
-        <rect x="135" y="395" width="90" height="26" rx="4" fill="#FBECE9" stroke="#C93B2B" stroke-width="1" />
-        <text x="142" y="407" font-family="'DM Sans', sans-serif" font-size="7.5" font-weight="800" fill="#78190F">Precaución Peatonal</text>
-        <text x="142" y="416" font-family="'DM Sans', sans-serif" font-size="6.5" fill="#78190F">Paso Boyacá Nocturno</text>
-
-        <circle cx="640" cy="430" r="32" fill="url(#risk-stripe-pattern)" stroke="#C93B2B" stroke-width="1.5" stroke-dasharray="3 2" />
-        <rect x="595" y="415" width="90" height="26" rx="4" fill="#FBECE9" stroke="#C93B2B" stroke-width="1" />
-        <text x="602" y="427" font-family="'DM Sans', sans-serif" font-size="7.5" font-weight="800" fill="#78190F">Poco flujo nocturno</text>
-        <text x="602" y="436" font-family="'DM Sans', sans-serif" font-size="6.5" fill="#78190F">Hacia cerros (>9pm)</text>
-      </g>
-    </svg>
-
-    <div id="interactive-pins-layer" style="position: absolute; inset: 0; pointer-events: auto;"></div>
+      <div style="display: flex; gap: 6px;">
+        <a href="/inmueble.html?id=${p.id}" target="_blank" style="flex: 1; text-align: center; background: var(--color-ink); color: var(--color-cream); padding: 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-decoration: none;">Ver Detalle</a>
+        <button type="button" onclick="toggleSaveProperty(${p.id})" style="background: ${isSaved ? 'var(--color-terracotta)' : 'var(--color-sand)'}; color: ${isSaved ? '#fff' : 'var(--color-ink)'}; border: 1px solid var(--color-ink); padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">${isSaved ? 'Guardado' : 'Guardar'}</button>
+      </div>
+    </div>
   `;
 }
 
-function renderMapPinsLayer(properties) {
-  const container = document.getElementById('interactive-pins-layer');
+// Inicializar el mapa principal en index.html
+function initBogotaLeafletMap() {
+  const container = document.getElementById('map-canvas-container');
   if (!container) return;
 
-  container.innerHTML = properties
-    .map((p) => {
-      const total = calculateTotalCost(p);
-      const shortPrice = total >= 100000000 ? `${(total / 1000000).toFixed(0)}M` : `${(total / 1000000).toFixed(1)}M`;
-      const x = p.coords?.x ?? p.pos_x ?? 50;
-      const y = p.coords?.y ?? p.pos_y ?? 50;
-      const img = escapeHTML((p.imagenes && p.imagenes[0]) || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80');
-      const titulo = escapeHTML(p.titulo);
-      const barrio = escapeHTML(p.barrio);
-      const cuadras = p.transporte?.distanciaCuadras ?? 3;
+  if (globalLeafletMap) {
+    globalLeafletMap.remove();
+    globalLeafletMap = null;
+  }
 
-      return `
-      <div class="map-drop-pin" style="left: ${x}%; top: ${y}%;" onclick="focusPropertyCardInList(${p.id})" onmouseenter="previewPropertyHighlight(${p.id}, true)" onmouseleave="previewPropertyHighlight(${p.id}, false)" role="button" tabindex="0" aria-label="${titulo}, total ${formatCOP(total)}">
-        <span>$${shortPrice}</span>
-        
-        <div class="map-drop-pin__popup">
-          <img src="${img}" alt="${titulo}">
-          <div style="font-family: var(--font-serif); font-size: 0.8rem; font-weight: 700; color: var(--color-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${titulo}</div>
-          <div style="font-size: 0.7rem; color: var(--color-ink-muted);">${barrio} · A ${cuadras} c. estación</div>
-          <div style="font-family: var(--font-serif); font-size: 0.85rem; font-weight: 800; color: var(--color-moss-dark);">${formatCOP(total)}</div>
-        </div>
-      </div>
-    `;
-    })
-    .join('');
+  const bogotaCenter = [4.711, -74.0721];
+  const bogotaBounds = L.latLngBounds([4.45, -74.30], [4.95, -73.90]);
+
+  globalLeafletMap = L.map('map-canvas-container', {
+    center: bogotaCenter,
+    zoom: 12,
+    minZoom: 11,
+    maxZoom: 18,
+    maxBounds: bogotaBounds,
+    maxBoundsViscosity: 0.8
+  });
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19
+}).addTo(globalLeafletMap);
+
+  globalMarkersCluster = L.markerClusterGroup({
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: true
+  });
+  globalLeafletMap.addLayer(globalMarkersCluster);
+
+  // Capas opcionales con control L.control.layers
+  activeLayersGroup.transporte = L.layerGroup();
+  activeLayersGroup.supermercado = L.layerGroup();
+  activeLayersGroup.zona_riesgo = L.layerGroup();
+
+  const overlayMaps = {
+    "🚇 TransMilenio & SITP": activeLayersGroup.transporte,
+    "🛒 Supermercados": activeLayersGroup.supermercado,
+    "⚠️ Zonas de Precaución": activeLayersGroup.zona_riesgo
+  };
+
+  optionalLayersControl = L.control.layers(null, overlayMaps, { position: 'topright' }).addTo(globalLeafletMap);
+
+  // Carga perezosa al activar capas
+  globalLeafletMap.on('overlayadd', async (e) => {
+    if (e.name.includes('TransMilenio') && activeLayersGroup.transporte.getLayers().length === 0) {
+      await loadPoiLayer('transporte', activeLayersGroup.transporte, '#C93B2B');
+    }
+    if (e.name.includes('Supermercados') && activeLayersGroup.supermercado.getLayers().length === 0) {
+      await loadPoiLayer('supermercado', activeLayersGroup.supermercado, '#2D4435');
+    }
+    if (e.name.includes('Zonas') && activeLayersGroup.zona_riesgo.getLayers().length === 0) {
+      await loadPoiLayer('zona_riesgo', activeLayersGroup.zona_riesgo, '#E0A526', true);
+    }
+  });
+
+  updateMapMarkers(AppState.resultados || []);
+}
+
+async function loadPoiLayer(categoria, layerGroup, color, isRisk = false) {
+  try {
+    const res = await apiFetch(`/api/puntos-interes?categoria=${categoria}`);
+    const puntos = res.puntos || [];
+
+    puntos.forEach((poi) => {
+      if (!poi.lat || !poi.lng) return;
+
+      if (isRisk) {
+        const circle = L.circle([poi.lat, poi.lng], {
+          radius: 350,
+          color: '#C93B2B',
+          fillColor: '#C93B2B',
+          fillOpacity: 0.25,
+          weight: 1.5,
+          dashArray: '4 4'
+        }).bindPopup(`<div style="font-family: 'DM Sans'; font-weight: 700;">⚠️ Zona de precaución: ${escapeHTML(poi.nombre)}</div>`);
+        layerGroup.addLayer(circle);
+      } else {
+        const marker = L.circleMarker([poi.lat, poi.lng], {
+          radius: 6,
+          fillColor: color,
+          color: '#ffffff',
+          weight: 2,
+          fillOpacity: 0.9
+        }).bindPopup(`<div style="font-family: 'DM Sans'; font-weight: 700;">${escapeHTML(poi.nombre)}</div>`);
+        layerGroup.addLayer(marker);
+      }
+    });
+  } catch (err) {
+    console.warn(`No se pudo cargar capa POI ${categoria}:`, err);
+  }
+}
+
+function updateMapMarkers(properties) {
+  if (!globalMarkersCluster) return;
+
+  globalMarkersCluster.clearLayers();
+
+  properties.forEach((p) => {
+    if (!p.lat || !p.lng) return;
+
+    const icon = createCustomDivIcon(p.operacion);
+    const marker = L.marker([Number(p.lat), Number(p.lng)], { icon });
+
+    marker.bindPopup(renderPopupHTML(p));
+
+    marker.on('mouseover', () => {
+      previewPropertyHighlight(p.id, true);
+    });
+    marker.on('mouseout', () => {
+      previewPropertyHighlight(p.id, false);
+    });
+
+    globalMarkersCluster.addLayer(marker);
+  });
 }
 
 function focusPropertyCardInList(id) {
@@ -140,24 +200,164 @@ function previewPropertyHighlight(id, enable) {
   }
 }
 
-function toggleMapLayer(layerKey) {
-  AppState.capasMapa[layerKey] = !AppState.capasMapa[layerKey];
-  const layerIdMap = {
-    transporte: '#layer-transmilenio-group',
-    riesgo: '#layer-risk-group'
+// Mapa pequeño en la ficha de detalle (inmueble.html)
+function initPropertyDetailLeafletMap(property) {
+  const container = document.getElementById('detail-map-canvas');
+  if (!container || !property || !property.lat || !property.lng) return;
+
+  const map = L.map('detail-map-canvas', {
+    center: [property.lat, property.lng],
+    zoom: 15,
+    dragging: !L.Browser.mobile,
+    tap: !L.Browser.mobile
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  const icon = createCustomDivIcon(property.operacion);
+  const marker = L.marker([property.lat, property.lng], { icon }).addTo(map);
+  marker.bindPopup(renderPopupHTML(property)).openPopup();
+
+  if (Array.isArray(property.puntos_interes)) {
+    property.puntos_interes.forEach((poi) => {
+      if (poi.lat && poi.lng) {
+        L.circleMarker([poi.lat, poi.lng], {
+          radius: 5,
+          fillColor: poi.categoria === 'transporte' ? '#C93B2B' : '#2D4435',
+          color: '#fff',
+          weight: 2,
+          fillOpacity: 0.9
+        }).bindPopup(`<div style="font-family: 'DM Sans'; font-weight: 700;">${escapeHTML(poi.nombre)}</div>`).addTo(map);
+      }
+    });
+  }
+}
+
+// Mapa interactivo para publicar inmueble con Nominatim
+function initPublishLeafletMap() {
+  const container = document.getElementById('leaflet-picker-map');
+  if (!container) return;
+
+  const bogotaCenter = [4.711, -74.0721];
+  const map = L.map('leaflet-picker-map', {
+    center: bogotaCenter,
+    zoom: 13
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  let marker = L.marker(bogotaCenter, { draggable: true }).addTo(map);
+
+  function updateInputs(lat, lng) {
+    const latInput = document.getElementById('pub-lat');
+    const lngInput = document.getElementById('pub-lng');
+    if (latInput) latInput.value = lat.toFixed(6);
+    if (lngInput) lngInput.value = lng.toFixed(6);
+  }
+
+  marker.on('dragend', (e) => {
+    const pos = e.target.getLatLng();
+    updateInputs(pos.lat, pos.lng);
+  });
+
+  map.on('click', (e) => {
+    marker.setLatLng(e.latlng);
+    updateInputs(e.latlng.lat, e.latlng.lng);
+  });
+
+  updateInputs(bogotaCenter[0], bogotaCenter[1]);
+
+  // Agregar buscador Nominatim opcional encima del mapa
+  const searchBox = document.createElement('div');
+  searchBox.style.cssText = 'position: absolute; top: 10px; right: 10px; z-index: 1000; background: #fff; padding: 6px; border: 2px solid var(--color-ink); border-radius: 4px; display: flex; gap: 4px;';
+  searchBox.innerHTML = `
+    <input type="search" id="nominatim-input" placeholder="Buscar dirección en Bogotá..." style="padding: 4px 8px; font-size: 0.8rem; border: 1px solid #ccc; border-radius: 2px; width: 220px;">
+    <button type="button" id="nominatim-btn" style="background: var(--color-ink); color: #fff; border: none; padding: 4px 8px; border-radius: 2px; cursor: pointer; font-size: 0.8rem;">Buscar</button>
+  `;
+  container.style.position = 'relative';
+  container.appendChild(searchBox);
+
+  const searchBtn = document.getElementById('nominatim-btn');
+  const searchInput = document.getElementById('nominatim-input');
+
+  const performNominatimSearch = async () => {
+    const queryStr = searchInput.value.trim();
+    if (!queryStr) return;
+
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryStr + ', Bogotá, Colombia')}&city=Bogotá&countrycode=CO&format=json`;
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'HabitaBogota/1.0 (contacto@habitabogota.co)' }
+      });
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const lat = Number(data[0].lat);
+        const lon = Number(data[0].lon);
+        map.setView([lat, lon], 16);
+        marker.setLatLng([lat, lon]);
+        updateInputs(lat, lon);
+        showToast('Ubicación encontrada en el mapa');
+      } else {
+        showToast('No se encontró la dirección exacta.', 'icon-alert');
+      }
+    } catch {
+      showToast('Error al consultar Nominatim.', 'icon-alert');
+    }
   };
 
-  const svgTarget = document.querySelector(layerIdMap[layerKey]);
-  if (svgTarget) {
-    svgTarget.style.display = AppState.capasMapa[layerKey] ? 'inline' : 'none';
+  if (searchBtn) searchBtn.onclick = performNominatimSearch;
+  if (searchInput) {
+    searchInput.onkeydown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        performNominatimSearch();
+      }
+    };
   }
-
-  const btn = document.getElementById(`layer-btn-${layerKey}`);
-  if (btn) {
-    btn.classList.toggle('btn--primary', AppState.capasMapa[layerKey]);
-    btn.classList.toggle('btn--secondary', !AppState.capasMapa[layerKey]);
-    btn.setAttribute('aria-pressed', String(AppState.capasMapa[layerKey]));
-  }
-
-  showToast(`Capa ${layerKey}: ${AppState.capasMapa[layerKey] ? 'Visible' : 'Oculta'}`);
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  initPublishLeafletMap();
+});
+
+function toggleMapLayer(layerName) {
+  const normalizedKey = layerName === 'riesgo' ? 'zona_riesgo' : layerName;
+  const layerGroup = activeLayersGroup[normalizedKey];
+  const btn = document.getElementById(`layer-btn-${layerName}`);
+
+  if (!globalLeafletMap || !layerGroup) return;
+
+  if (globalLeafletMap.hasLayer(layerGroup)) {
+    globalLeafletMap.removeLayer(layerGroup);
+    if (btn) {
+      btn.style.background = 'var(--color-sand)';
+      btn.style.color = 'var(--color-ink)';
+      btn.setAttribute('aria-pressed', 'false');
+    }
+  } else {
+    globalLeafletMap.addLayer(layerGroup);
+    if (layerGroup.getLayers().length === 0) {
+      if (normalizedKey === 'transporte') loadPoiLayer('transporte', layerGroup, '#C93B2B');
+      if (normalizedKey === 'zona_riesgo') loadPoiLayer('zona_riesgo', layerGroup, '#E0A526', true);
+    }
+    if (btn) {
+      btn.style.background = 'var(--color-terracotta)';
+      btn.style.color = '#fff';
+      btn.setAttribute('aria-pressed', 'true');
+    }
+  }
+}
+
+window.initBogotaLeafletMap = initBogotaLeafletMap;
+window.updateMapMarkers = updateMapMarkers;
+window.toggleMapLayer = toggleMapLayer;
+window.initPropertyDetailLeafletMap = initPropertyDetailLeafletMap;
+window.initPublishLeafletMap = initPublishLeafletMap;
+
+
