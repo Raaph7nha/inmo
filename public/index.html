@@ -566,5 +566,50 @@
     </div>
   </footer>
 
+  <!-- MODAL DE AUTENTICACIÓN (LOGIN / REGISTRO) -->
+  <div id="modal-auth" class="modal-overlay" role="dialog" aria-hidden="true">
+    <div class="modal-window" style="max-width: 420px; background: var(--color-sand, #F6F1E9); border: 2px solid var(--color-ink, #1F2937); border-radius: 12px; padding: 0; box-shadow: 6px 6px 0px var(--color-ink, #1F2937);">
+      <div style="padding: 16px 20px; border-bottom: 1.5px solid var(--color-ink); display: flex; justify-content: space-between; align-items: center; background: var(--color-cream, #FAF7F2);">
+        <h2 style="font-family: var(--font-serif, 'Fraunces', serif); font-size: 1.25rem; font-weight: 700; margin: 0; color: var(--color-ink);">Acceso HabitaBogotá</h2>
+        <button type="button" onclick="window.cerrarModalAuth()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; font-weight: 750;">✕</button>
+      </div>
+      <div id="auth-context-msg" style="padding: 12px 20px 0 20px; font-size: 0.85rem; color: var(--color-terracotta, #B4472B); font-weight: 600; display: none;"></div>
+      <div style="display: flex; background: var(--color-cream); border-bottom: 1.5px solid var(--color-ink);">
+        <button type="button" id="tab-login-btn" onclick="window.cambiarTabAuth('login')" style="flex: 1; padding: 12px; border: none; background: var(--color-sand); font-weight: 700; cursor: pointer;">Iniciar Sesión</button>
+        <button type="button" id="tab-registro-btn" onclick="window.cambiarTabAuth('registro')" style="flex: 1; padding: 12px; border: none; background: transparent; font-weight: 500; cursor: pointer;">Crear Cuenta</button>
+      </div>
+      <div style="padding: 24px;">
+        <form id="form-login" onsubmit="window.handleLoginSubmit(event)" style="display: flex; flex-direction: column; gap: 14px;">
+          <div id="login-error" style="color: var(--color-terracotta); font-size: 0.8rem; display: none;"></div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Correo electrónico</label>
+            <input type="email" id="login-correo" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Contraseña</label>
+            <input type="password" id="login-password" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+          </div>
+          <button type="submit" class="btn btn--primary" style="margin-top: 6px; width: 100%; padding: 12px; background: var(--color-terracotta); color: #fff; font-weight: 700; border: none; border-radius: 6px; cursor: pointer;">Entrar a HabitaBogotá</button>
+        </form>
+        <form id="form-registro" onsubmit="window.handleRegistroSubmit(event)" style="display: none; flex-direction: column; gap: 14px;">
+          <div id="registro-error" style="color: var(--color-terracotta); font-size: 0.8rem; display: none;"></div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Nombre completo</label>
+            <input type="text" id="reg-nombre" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Correo electrónico</label>
+            <input type="email" id="reg-correo" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Contraseña (mínimo 8 caracteres)</label>
+            <input type="password" id="reg-password" minlength="8" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+          </div>
+          <button type="submit" class="btn btn--primary" style="margin-top: 6px; width: 100%; padding: 12px; background: var(--color-terracotta); color: #fff; font-weight: 700; border: none; border-radius: 6px; cursor: pointer;">Registrarse gratis</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

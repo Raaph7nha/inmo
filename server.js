@@ -19,13 +19,13 @@ import { notFoundHandler, errorHandler } from './src/middleware/errorHandler.js'
 
 import authRouter from './src/routes/auth.js';
 import cloudinaryRouter from './src/routes/cloudinary.js';
-import puntosInteresRouter from './src/routes/puntos-interes.js';
 import viviendasRouter from './src/routes/viviendas.js';
 import guardadosRouter from './src/routes/guardados.js';
 import comparadorRouter from './src/routes/comparador.js';
 import alertasRouter from './src/routes/alertas.js';
 import soporteRouter from './src/routes/soporte.js';
 import chatRouter from './src/routes/chat.js';
+import visitasRouter from './src/routes/visitas.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -143,7 +143,6 @@ app.get('/api/diagnostico', async (_req, res) => {
 // Rutas REST de la plataforma
 app.use('/api/auth', authRouter);
 app.use('/api/cloudinary', cloudinaryRouter);
-app.use('/api/puntos-interes', puntosInteresRouter);
 app.use('/api/viviendas', viviendasRouter);
 app.use('/api/inmuebles', viviendasRouter);
 app.use('/api/guardados', guardadosRouter);
@@ -151,6 +150,7 @@ app.use('/api/comparador', comparadorRouter);
 app.use('/api/alertas', alertasRouter);
 app.use('/api/soporte', soporteRouter);
 app.use('/api/chat', chatRouter);
+app.use('/api/visitas', visitasRouter);
 
 // Manejo de rutas API inexistentes
 app.use(notFoundHandler);
@@ -169,7 +169,8 @@ const pageRoutes = [
   { route: '/inmueble', file: 'inmueble.html' },
   { route: '/guardados', file: 'guardados.html' },
   { route: '/comparador', file: 'comparador.html' },
-  { route: '/ayuda', file: 'ayuda.html' }
+  { route: '/ayuda', file: 'ayuda.html' },
+  { route: '/perfil', file: 'perfil.html' }
 ];
 
 pageRoutes.forEach(({ route, file }) => {

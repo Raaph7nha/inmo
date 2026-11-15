@@ -1,14 +1,14 @@
 -- ============================================================================
--- HABITABOGOTÁ — Esquema Relacional PostgreSQL (Neon) con Usuarios, Viviendas y Cloudinary
+-- HABITABOGOTÁ — Esquema Relacional PostgreSQL (Neon) con Usuarios, Viviendas, Guardados, Comparador y Visitas
 -- ============================================================================
 
 DROP VIEW IF EXISTS vista_viviendas_resumen;
+DROP TABLE IF EXISTS visitas CASCADE;
 DROP TABLE IF EXISTS chat_mensajes CASCADE;
 DROP TABLE IF EXISTS mensajes_soporte CASCADE;
 DROP TABLE IF EXISTS alertas CASCADE;
 DROP TABLE IF EXISTS comparador CASCADE;
 DROP TABLE IF EXISTS guardados CASCADE;
-DROP TABLE IF EXISTS sesiones CASCADE;
 DROP TABLE IF EXISTS puntos_interes CASCADE;
 DROP TABLE IF EXISTS imagenes_vivienda CASCADE;
 DROP TABLE IF EXISTS imagenes_huerfanas CASCADE;
@@ -77,14 +77,14 @@ CREATE TABLE imagenes_vivienda (
   orden INT DEFAULT 0
 );
 
--- 4. Imágenes huérfanas (fallo de borrado en Cloudinary)
+-- 4. Imágenes huérfanas
 CREATE TABLE imagenes_huerfanas (
   id SERIAL PRIMARY KEY,
   cloudinary_public_id TEXT NOT NULL,
   creado_en TIMESTAMPTZ DEFAULT now()
 );
 
--- 5. Puntos de interés cercanos con coordenadas geográficas reales
+-- 5. Puntos de interés cercanos
 CREATE TABLE puntos_interes (
   id SERIAL PRIMARY KEY,
   vivienda_id INT REFERENCES viviendas(id) ON DELETE CASCADE,
@@ -95,23 +95,38 @@ CREATE TABLE puntos_interes (
   distancia_cuadras INT CHECK (distancia_cuadras >= 0)
 );
 
--- 6. Guardados (Favoritos por usuario)
+-- 6. Guardados (Soporta usuario autenticado o sesión anónima)
 CREATE TABLE guardados (
+  id SERIAL PRIMARY KEY,
   usuario_id INT REFERENCES usuarios(id) ON DELETE CASCADE,
+  sesion_id VARCHAR(100),
   vivienda_id INT REFERENCES viviendas(id) ON DELETE CASCADE,
-  creado_en TIMESTAMPTZ DEFAULT now(),
-  PRIMARY KEY (usuario_id, vivienda_id)
+  creado_en TIMESTAMPTZ DEFAULT now()
 );
 
--- 7. Comparador (máximo 3 por usuario)
+-- 7. Comparador (máximo 3 por usuario o sesión anónima)
 CREATE TABLE comparador (
+  id SERIAL PRIMARY KEY,
   usuario_id INT REFERENCES usuarios(id) ON DELETE CASCADE,
+  sesion_id VARCHAR(100),
   vivienda_id INT REFERENCES viviendas(id) ON DELETE CASCADE,
-  creado_en TIMESTAMPTZ DEFAULT now(),
-  PRIMARY KEY (usuario_id, vivienda_id)
+  creado_en TIMESTAMPTZ DEFAULT now()
 );
 
--- 8. Alertas de búsqueda por correo
+-- 8. Visitas agendadas (requiere login)
+CREATE TABLE visitas (
+  id SERIAL PRIMARY KEY,
+  usuario_id INT REFERENCES usuarios(id) ON DELETE CASCADE,
+  vivienda_id INT REFERENCES viviendas(id) ON DELETE CASCADE,
+  fecha_preferida DATE NOT NULL,
+  horario VARCHAR(20) CHECK (horario IN ('mañana', 'tarde', 'noche')) NOT NULL,
+  telefono VARCHAR(50) NOT NULL,
+  mensaje TEXT,
+  estado VARCHAR(20) DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'confirmada', 'cancelada')),
+  creado_en TIMESTAMPTZ DEFAULT now()
+);
+
+-- 9. Alertas de búsqueda por correo
 CREATE TABLE alertas (
   id SERIAL PRIMARY KEY,
   usuario_id INT REFERENCES usuarios(id) ON DELETE CASCADE,
@@ -120,7 +135,7 @@ CREATE TABLE alertas (
   creado_en TIMESTAMPTZ DEFAULT now()
 );
 
--- 9. Mensajes de soporte y asesoría legal
+-- 10. Mensajes de soporte
 CREATE TABLE mensajes_soporte (
   id SERIAL PRIMARY KEY,
   nombre VARCHAR(120) NOT NULL,
@@ -129,7 +144,7 @@ CREATE TABLE mensajes_soporte (
   creado_en TIMESTAMPTZ DEFAULT now()
 );
 
--- 10. Historial de chat con el asistente Habi
+-- 11. Historial de chat
 CREATE TABLE chat_mensajes (
   id SERIAL PRIMARY KEY,
   usuario_id INT REFERENCES usuarios(id) ON DELETE CASCADE,
@@ -146,13 +161,10 @@ SELECT
   CASE WHEN v.operacion = 'arriendo' THEN (v.precio + v.administracion) ELSE v.precio END AS costo_mensual_real
 FROM viviendas v;
 
--- ÍNDICES DE ALTO RENDIMIENTO
+-- ÍNDICES
 CREATE INDEX idx_viviendas_operacion ON viviendas (operacion);
-CREATE INDEX idx_viviendas_tipo ON viviendas (tipo);
-CREATE INDEX idx_viviendas_barrio ON viviendas (barrio);
-CREATE INDEX idx_viviendas_precio ON viviendas (precio);
-CREATE INDEX idx_viviendas_mascotas ON viviendas (mascotas);
-CREATE INDEX idx_viviendas_parqueadero ON viviendas (parqueadero);
-CREATE INDEX idx_viviendas_lat_lng ON viviendas (lat, lng);
-CREATE INDEX idx_imagenes_vivienda ON imagenes_vivienda (vivienda_id, orden);
-CREATE INDEX idx_puntos_interes_cat ON puntos_interes (vivienda_id, categoria);
+CREATE INDEX idx_guardados_usuario ON guardados (usuario_id);
+CREATE INDEX idx_guardados_sesion ON guardados (sesion_id);
+CREATE INDEX idx_comparador_usuario ON comparador (usuario_id);
+CREATE INDEX idx_comparador_sesion ON comparador (sesion_id);
+CREATE INDEX idx_visitas_usuario ON visitas (usuario_id);

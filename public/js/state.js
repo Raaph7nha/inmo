@@ -169,8 +169,24 @@ function notifyFiltersChange() {
   AppState.filterListeners.forEach((fn) => fn(AppState));
 }
 
-// Sincroniza Guardados y Comparador desde Neon Postgres
+// Sincroniza Guardados y Comparador (API si autenticado, localStorage si anónimo)
 async function syncSessionLists() {
+  if (!window.usuarioActual) {
+    try {
+      const savedIds = JSON.parse(localStorage.getItem('habitabogota_guardados_local') || '[]');
+      const compareIds = JSON.parse(localStorage.getItem('habitabogota_comparador_local') || '[]');
+      AppState.guardados = savedIds.map(Number);
+      AppState.comparador = compareIds.map(Number);
+      AppState.guardadosInmuebles = AppState.guardados.map(id => getCachedInmueble(id)).filter(Boolean);
+      AppState.comparadorInmuebles = AppState.comparador.map(id => getCachedInmueble(id)).filter(Boolean);
+      notifyStateChange();
+    } catch {
+      AppState.guardados = [];
+      AppState.comparador = [];
+    }
+    return;
+  }
+
   try {
     const [savedData, compareData] = await Promise.all([
       apiFetch('/api/guardados'),
@@ -190,12 +206,43 @@ async function syncSessionLists() {
   }
 }
 
-// Alternar inmueble en Guardados (API real POST/DELETE /api/guardados)
+// Alternar inmueble en Guardados (localStorage si anónimo, API si autenticado)
 async function toggleSaveProperty(rawId) {
   const id = Number(rawId);
   const isCurrentlySaved = AppState.guardados.includes(id);
   const item = getCachedInmueble(id);
   const titulo = item ? item.titulo : 'Inmueble';
+
+  if (!window.usuarioActual) {
+    let savedIds = [];
+    try {
+      savedIds = JSON.parse(localStorage.getItem('habitabogota_guardados_local') || '[]').map(Number);
+    } catch {
+      savedIds = [];
+    }
+
+    if (isCurrentlySaved) {
+      savedIds = savedIds.filter(i => i !== id);
+      AppState.guardadosInmuebles = AppState.guardadosInmuebles.filter(i => i.id !== id);
+    } else {
+      if (!savedIds.includes(id)) savedIds.push(id);
+      if (item && !AppState.guardadosInmuebles.some(i => i.id === id)) {
+        AppState.guardadosInmuebles.push(item);
+      }
+    }
+    localStorage.setItem('habitabogota_guardados_local', JSON.stringify(savedIds));
+    AppState.guardados = savedIds;
+    cacheInmuebles(AppState.guardadosInmuebles);
+
+    showToast(
+      isCurrentlySaved
+        ? `Removido de Guardados: ${titulo}`
+        : `Guardado en tus favoritos: ${titulo}`
+    );
+    broadcastCrossTabSync();
+    notifyStateChange();
+    return;
+  }
 
   try {
     const data = isCurrentlySaved
@@ -205,8 +252,8 @@ async function toggleSaveProperty(rawId) {
           body: JSON.stringify({ inmueble_id: id })
         });
 
-    AppState.guardados = data.ids.map(Number);
-    AppState.guardadosInmuebles = data.inmuebles || [];
+    AppState.guardados = (data.ids || []).map(Number);
+    AppState.guardadosInmuebles = data.inmuebles || data.items || [];
     cacheInmuebles(AppState.guardadosInmuebles);
 
     showToast(
@@ -222,11 +269,48 @@ async function toggleSaveProperty(rawId) {
   }
 }
 
-// Alternar inmueble en Comparador (API real POST/DELETE /api/comparador, máx. 3)
+// Alternar inmueble en Comparador (localStorage si anónimo, API si autenticado)
 async function toggleCompareProperty(rawId, forceAdd = null) {
   const id = Number(rawId);
   const isCurrentlyIn = AppState.comparador.includes(id);
   const shouldAdd = forceAdd !== null ? forceAdd : !isCurrentlyIn;
+  const item = getCachedInmueble(id);
+
+  if (!window.usuarioActual) {
+    let compareIds = [];
+    try {
+      compareIds = JSON.parse(localStorage.getItem('habitabogota_comparador_local') || '[]').map(Number);
+    } catch {
+      compareIds = [];
+    }
+
+    if (shouldAdd) {
+      if (compareIds.length >= 3 && !compareIds.includes(id)) {
+        showToast('Solo puedes comparar hasta 3 inmuebles simultáneos para conservar una tabla legible.', 'icon-alert');
+        return false;
+      }
+      if (!compareIds.includes(id)) compareIds.push(id);
+      if (item && !AppState.comparadorInmuebles.some(i => i.id === id)) {
+        AppState.comparadorInmuebles.push(item);
+      }
+    } else {
+      compareIds = compareIds.filter(i => i !== id);
+      AppState.comparadorInmuebles = AppState.comparadorInmuebles.filter(i => i.id !== id);
+    }
+
+    localStorage.setItem('habitabogota_comparador_local', JSON.stringify(compareIds));
+    AppState.comparador = compareIds;
+    cacheInmuebles(AppState.comparadorInmuebles);
+
+    showToast(
+      shouldAdd
+        ? `Agregado al comparador (${AppState.comparador.length}/3)`
+        : 'Removido del comparador'
+    );
+    broadcastCrossTabSync();
+    notifyStateChange();
+    return true;
+  }
 
   try {
     const data = shouldAdd
@@ -236,8 +320,8 @@ async function toggleCompareProperty(rawId, forceAdd = null) {
         })
       : await apiFetch(`/api/comparador/${id}`, { method: 'DELETE' });
 
-    AppState.comparador = data.ids.map(Number);
-    AppState.comparadorInmuebles = data.inmuebles || [];
+    AppState.comparador = (data.ids || []).map(Number);
+    AppState.comparadorInmuebles = data.inmuebles || data.items || [];
     cacheInmuebles(AppState.comparadorInmuebles);
 
     showToast(

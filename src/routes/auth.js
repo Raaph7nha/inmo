@@ -1,13 +1,13 @@
 /**
  * HABITABOGOTÁ — /src/routes/auth.js
- * Rutas de autenticación con JWT, bcrypt y cookies httpOnly.
+ * Rutas de autenticación con JWT, bcrypt, cookies httpOnly y migración de sesión anónima.
  */
 
 import { Router } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { query } from '../db.js';
+import { isDatabaseConfigured, query } from '../db.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
 import { validateBody, sanitizeText } from '../middleware/validate.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
@@ -18,12 +18,14 @@ const registroSchema = z.object({
   nombre: z.preprocess((v) => sanitizeText(v), z.string().min(2, 'Ingresa tu nombre completo.').max(120)),
   correo: z.preprocess((v) => sanitizeText(v).toLowerCase(), z.string().email('Ingresa un correo electrónico válido.').max(255)),
   contrasena: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres.').max(100),
-  rol: z.enum(['comprador', 'arrendador']).optional().default('comprador')
+  rol: z.enum(['comprador', 'arrendador']).optional().default('comprador'),
+  session_id: z.string().optional().nullable()
 });
 
 const loginSchema = z.object({
   correo: z.preprocess((v) => sanitizeText(v).toLowerCase(), z.string().email('Ingresa un correo electrónico válido.').max(255)),
-  contrasena: z.string().min(1, 'Ingresa tu contraseña.')
+  contrasena: z.string().min(1, 'Ingresa tu contraseña.'),
+  session_id: z.string().optional().nullable()
 });
 
 const perfilSchema = z.object({
@@ -47,12 +49,33 @@ function signUserToken(user) {
   );
 }
 
+async function migrateSessionData(userId, sesionId) {
+  if (!sesionId || !isDatabaseConfigured()) return;
+  try {
+    await query(`
+      INSERT INTO guardados (usuario_id, vivienda_id)
+      SELECT $1, vivienda_id FROM guardados WHERE sesion_id = $2 AND usuario_id IS NULL
+      ON CONFLICT DO NOTHING
+    `, [userId, sesionId]);
+    await query('DELETE FROM guardados WHERE sesion_id = $2 AND usuario_id IS NULL', [userId, sesionId]);
+
+    await query(`
+      INSERT INTO comparador (usuario_id, vivienda_id)
+      SELECT $1, vivienda_id FROM comparador WHERE sesion_id = $2 AND usuario_id IS NULL
+      ON CONFLICT DO NOTHING
+    `, [userId, sesionId]);
+    await query('DELETE FROM comparador WHERE sesion_id = $2 AND usuario_id IS NULL', [userId, sesionId]);
+  } catch (err) {
+    console.warn('Error migrando datos anónimos:', err);
+  }
+}
+
 // POST /api/auth/registro
 router.post(
   '/registro',
   validateBody(registroSchema),
   asyncHandler(async (req, res) => {
-    const { nombre, correo, contrasena, rol } = req.validatedBody;
+    const { nombre, correo, contrasena, rol, session_id } = req.validatedBody;
 
     const existing = await query('SELECT id FROM usuarios WHERE correo = $1', [correo]);
     if (existing.rows.length > 0) {
@@ -66,6 +89,8 @@ router.post(
     );
 
     const usuario = result.rows[0];
+    await migrateSessionData(usuario.id, session_id);
+
     const token = signUserToken(usuario);
 
     res.cookie('habi_token', token, COOKIE_OPTIONS);
@@ -87,7 +112,7 @@ router.post(
   '/login',
   validateBody(loginSchema),
   asyncHandler(async (req, res) => {
-    const { correo, contrasena } = req.validatedBody;
+    const { correo, contrasena, session_id } = req.validatedBody;
 
     const result = await query('SELECT * FROM usuarios WHERE correo = $1 LIMIT 1', [correo]);
     if (!result.rows.length) {
@@ -99,6 +124,8 @@ router.post(
     if (!match) {
       throw new AppError('Correo o contraseña incorrectos.', 401, 'INVALID_CREDENTIALS');
     }
+
+    await migrateSessionData(usuario.id, session_id);
 
     const token = signUserToken(usuario);
 
@@ -164,21 +191,18 @@ router.put(
     }
 
     if (fields.length === 0) {
-      throw new AppError('No hay datos para actualizar.', 400, 'NO_DATA');
+      return res.json({ ok: true, mensaje: 'Sin cambios.' });
     }
 
     fields.push(`actualizado_en = now()`);
     values.push(userId);
 
-    const sql = `UPDATE usuarios SET ${fields.join(', ')} WHERE id = $${idx} RETURNING id, nombre, correo, rol, avatar_url`;
-    const result = await query(sql, values);
-    const usuario = result.rows[0];
+    const result = await query(
+      `UPDATE usuarios SET ${fields.join(', ')} WHERE id = $${idx} RETURNING id, nombre, correo, rol, avatar_url, creado_en`,
+      values
+    );
 
-    // Renovar token con datos actualizados
-    const token = signUserToken(usuario);
-    res.cookie('habi_token', token, COOKIE_OPTIONS);
-
-    return res.json({ ok: true, usuario });
+    return res.json({ ok: true, usuario: result.rows[0] });
   })
 );
 

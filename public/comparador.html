@@ -145,13 +145,55 @@
 
   </main>
 
-  <!-- FOOTER -->
-  <footer class="footer" role="contentinfo">
-    <div class="container footer__bottom">
-      <div>© 2026 HabitaBogotá S.A.S. — Diseñado con transparencia andina y accesibilidad WCAG 2.1 AA.</div>
-      <div>Bogotá D.C. · Precios en Pesos Colombianos (COP)</div>
+  <!-- MODAL DE AUTENTICACIÓN -->
+  <div id="modal-auth" onclick="if(event.target === this) cerrarModalAuth()" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0, 0, 0, 0.6); align-items: center; justify-content: center; padding: 16px;">
+    <div style="width: 100%; max-width: 420px; background: var(--color-sand, #F6F1E9); border: 2px solid var(--color-ink, #1F2937); border-radius: 12px; padding: 0; box-shadow: 6px 6px 0px var(--color-ink, #1F2937); overflow: hidden; font-family: var(--font-sans, 'DM Sans', sans-serif);">
+      <div style="padding: 16px 20px; border-bottom: 1.5px solid var(--color-ink); display: flex; justify-content: space-between; align-items: center; background: var(--color-cream, #FAF7F2);">
+        <h2 style="font-family: var(--font-serif, 'Fraunces', serif); font-size: 1.25rem; font-weight: 700; margin: 0; color: var(--color-ink);">Acceso HabitaBogotá</h2>
+        <button type="button" onclick="cerrarModalAuth()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; font-weight: 750;">✕</button>
+      </div>
+      <div style="display: flex; background: var(--color-cream); border-bottom: 1.5px solid var(--color-ink);">
+        <button type="button" id="tab-login-btn" onclick="cambiarTabAuth('login')" style="flex: 1; padding: 12px; border: none; background: var(--color-sand); font-weight: 700; cursor: pointer;">Iniciar Sesión</button>
+        <button type="button" id="tab-registro-btn" onclick="cambiarTabAuth('registro')" style="flex: 1; padding: 12px; border: none; background: transparent; font-weight: 500; cursor: pointer;">Crear Cuenta</button>
+      </div>
+      <div style="padding: 24px;">
+        <!-- Tab Login -->
+        <div id="form-login-tab" style="display: flex; flex-direction: column; gap: 14px;">
+          <div id="login-error-msg" style="color: var(--color-terracotta, #B4472B); font-size: 0.8rem; display: none; font-weight: 600;"></div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Correo electrónico</label>
+            <input type="email" id="login-correo" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Contraseña</label>
+            <input type="password" id="login-contrasena" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+          </div>
+          <button type="button" onclick="submitLogin()" style="margin-top: 6px; width: 100%; padding: 12px; background: var(--color-terracotta, #B4472B); color: #fff; font-weight: 700; border: none; border-radius: 6px; cursor: pointer;">Entrar a HabitaBogotá</button>
+        </div>
+        <!-- Tab Registro -->
+        <div id="form-registro-tab" style="display: none; flex-direction: column; gap: 14px;">
+          <div id="registro-error-msg" style="color: var(--color-terracotta, #B4472B); font-size: 0.8rem; display: none; font-weight: 600;"></div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Nombre completo</label>
+            <input type="text" id="registro-nombre" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Correo electrónico</label>
+            <input type="email" id="registro-correo" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Contraseña (mínimo 8 caracteres)</label>
+            <input type="password" id="registro-contrasena" minlength="8" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Confirmar contraseña</label>
+            <input type="password" id="registro-confirmar" minlength="8" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+          </div>
+          <button type="button" onclick="submitRegistro()" style="margin-top: 6px; width: 100%; padding: 12px; background: var(--color-terracotta, #B4472B); color: #fff; font-weight: 700; border: none; border-radius: 6px; cursor: pointer;">Registrarse gratis</button>
+        </div>
+      </div>
     </div>
-  </footer>
+  </div>
 
 </body>
 </html>

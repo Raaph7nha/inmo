@@ -68,15 +68,9 @@ async function initIndexPage() {
   const countDisplay = document.getElementById('results-count-number');
   const chipsContainer = document.getElementById('active-chips-container');
   const emptyBox = document.getElementById('search-empty-state');
-  const mapContainer = document.getElementById('map-canvas-container');
-
   if (!gridContainer) return;
 
   hydrateFiltersFromURL();
-
-  if (mapContainer) {
-    initBogotaLeafletMap();
-  }
 
   let activeRequestId = 0;
 
@@ -284,34 +278,6 @@ function initFilterControls() {
       btnMoreFilters.querySelector('span').textContent = !isVisible
         ? 'Ocultar zonas comunes'
         : 'Ver más filtros (Zonas comunes)';
-    };
-  }
-
-  const btnViewGrid = document.getElementById('btn-view-grid');
-  const btnViewMap = document.getElementById('btn-view-map');
-  const mapWrapper = document.getElementById('map-stage-wrapper');
-
-  if (btnViewGrid && btnViewMap && mapWrapper) {
-    btnViewGrid.onclick = () => {
-      btnViewGrid.classList.add('btn--primary');
-      btnViewGrid.classList.remove('btn--secondary');
-      btnViewMap.classList.add('btn--secondary');
-      btnViewMap.classList.remove('btn--primary');
-      btnViewGrid.setAttribute('aria-pressed', 'true');
-      btnViewMap.setAttribute('aria-pressed', 'false');
-      mapWrapper.style.display = 'none';
-      document.getElementById('results-grid').style.display = 'grid';
-    };
-
-    btnViewMap.onclick = () => {
-      btnViewMap.classList.add('btn--primary');
-      btnViewMap.classList.remove('btn--secondary');
-      btnViewGrid.classList.add('btn--secondary');
-      btnViewGrid.classList.remove('btn--primary');
-      btnViewMap.setAttribute('aria-pressed', 'true');
-      btnViewGrid.setAttribute('aria-pressed', 'false');
-      mapWrapper.style.display = 'block';
-      mapWrapper.scrollIntoView({ behavior: 'smooth' });
     };
   }
 

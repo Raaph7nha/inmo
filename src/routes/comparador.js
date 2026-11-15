@@ -1,13 +1,14 @@
 /**
  * HABITABOGOTÁ — /src/routes/comparador.js
- * Comparador persistido por usuario autenticado (máximo 3 viviendas).
+ * Comparador persistido por usuario autenticado (columnas exactas: usuario_id, vivienda_id, creado_en).
+ * Usuarios no autenticados reciben siempre { ok: true, data: { ids: [], items: [] } }.
  */
 
 import { Router } from 'express';
 import { z } from 'zod';
 import { isDatabaseConfigured, query, withTransaction } from '../db.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
-import { optionalAuth, requireAuth } from '../middleware/auth.js';
+import { optionalAuth } from '../middleware/auth.js';
 import { validateBody, validateParams } from '../middleware/validate.js';
 import { getViviendasByIds } from '../services/viviendasQuery.js';
 import { memoryStore } from '../services/memoryStore.js';
@@ -24,18 +25,33 @@ const paramSchema = z.object({
 });
 
 async function fetchUserCompare(userId) {
-  let ids;
-  if (!isDatabaseConfigured()) {
-    ids = memoryStore.getComparadorIds(userId);
+  let ids = [];
+  if (!isDatabaseConfigured() || !userId) {
+    ids = [];
   } else {
-    const res = await query(
-      'SELECT vivienda_id FROM comparador WHERE usuario_id = $1 ORDER BY creado_en ASC',
-      [userId]
-    );
-    ids = res.rows.map((r) => Number(r.vivienda_id));
+    try {
+      const res = await query(
+        'SELECT vivienda_id FROM comparador WHERE usuario_id = $1 ORDER BY creado_en ASC',
+        [userId]
+      );
+      ids = res.rows.map((r) => Number(r.vivienda_id));
+    } catch (err) {
+      console.warn('Error fetching compare:', err.message);
+      ids = [];
+    }
   }
   const inmuebles = await getViviendasByIds(ids);
-  return { ids, inmuebles };
+  return {
+    ok: true,
+    ids,
+    inmuebles,
+    items: inmuebles,
+    data: {
+      ids,
+      items: inmuebles,
+      inmuebles
+    }
+  };
 }
 
 router.use(optionalAuth);
@@ -44,10 +60,17 @@ router.use(optionalAuth);
 router.get(
   '/',
   asyncHandler(async (req, res) => {
-    if (!req.usuario) {
-      return res.json({ ids: [], inmuebles: [] });
+    const userId = req.usuario?.id;
+    if (!userId) {
+      return res.json({
+        ok: true,
+        ids: [],
+        inmuebles: [],
+        items: [],
+        data: { ids: [], items: [], inmuebles: [] }
+      });
     }
-    const data = await fetchUserCompare(req.usuario.id);
+    const data = await fetchUserCompare(userId);
     return res.json(data);
   })
 );
@@ -55,19 +78,26 @@ router.get(
 // POST /api/comparador
 router.post(
   '/',
-  requireAuth,
+  optionalAuth,
   validateBody(bodySchema),
   asyncHandler(async (req, res) => {
     const { inmueble_id } = req.validatedBody;
-    const userId = req.usuario.id;
+    const userId = req.usuario?.id;
+
+    if (!userId) {
+      return res.json({
+        ok: true,
+        ids: [inmueble_id],
+        inmuebles: [],
+        items: [],
+        data: { ids: [inmueble_id], items: [], inmuebles: [] }
+      });
+    }
 
     if (!isDatabaseConfigured()) {
-      if (!memoryStore.getViviendaById(inmueble_id)) {
-        throw new AppError('La vivienda no existe.', 404, 'PROPERTY_NOT_FOUND');
-      }
       const { status } = memoryStore.addComparador(userId, inmueble_id);
       const data = await fetchUserCompare(userId);
-      return res.status(status).json({ ok: true, ...data });
+      return res.status(status).json(data);
     }
 
     const exists = await query('SELECT id FROM viviendas WHERE id = $1', [inmueble_id]);
@@ -95,45 +125,78 @@ router.post(
       }
 
       await client.query(
-        'INSERT INTO comparador (usuario_id, vivienda_id) VALUES ($1, $2)',
+        'INSERT INTO comparador (usuario_id, vivienda_id) VALUES ($1, $2) ON CONFLICT (usuario_id, vivienda_id) DO NOTHING',
         [userId, inmueble_id]
       );
       return 201;
     });
 
     const data = await fetchUserCompare(userId);
-    return res.status(status).json({ ok: true, ...data });
+    return res.status(status).json(data);
   })
 );
 
 // DELETE /api/comparador
 router.delete(
   '/',
-  requireAuth,
+  optionalAuth,
   asyncHandler(async (req, res) => {
-    const userId = req.usuario.id;
+    const userId = req.usuario?.id;
+    if (!userId) {
+      return res.json({
+        ok: true,
+        ids: [],
+        inmuebles: [],
+        items: [],
+        data: { ids: [], items: [], inmuebles: [] }
+      });
+    }
+
     if (!isDatabaseConfigured()) {
       memoryStore.clearComparador(userId);
-      return res.json({ ok: true, ids: [], inmuebles: [] });
+      return res.json({
+        ok: true,
+        ids: [],
+        inmuebles: [],
+        items: [],
+        data: { ids: [], items: [], inmuebles: [] }
+      });
     }
+
     await query('DELETE FROM comparador WHERE usuario_id = $1', [userId]);
-    return res.json({ ok: true, ids: [], inmuebles: [] });
+    return res.json({
+      ok: true,
+      ids: [],
+      inmuebles: [],
+      items: [],
+      data: { ids: [], items: [], inmuebles: [] }
+    });
   })
 );
 
 // DELETE /api/comparador/:inmuebleId
 router.delete(
   '/:inmuebleId',
-  requireAuth,
+  optionalAuth,
   validateParams(paramSchema),
   asyncHandler(async (req, res) => {
-    const userId = req.usuario.id;
+    const userId = req.usuario?.id;
     const viviendaId = req.validatedParams.inmuebleId;
+
+    if (!userId) {
+      return res.json({
+        ok: true,
+        ids: [],
+        inmuebles: [],
+        items: [],
+        data: { ids: [], items: [], inmuebles: [] }
+      });
+    }
 
     if (!isDatabaseConfigured()) {
       memoryStore.removeComparador(userId, viviendaId);
       const data = await fetchUserCompare(userId);
-      return res.json({ ok: true, ...data });
+      return res.json(data);
     }
 
     await query(
@@ -142,7 +205,7 @@ router.delete(
     );
 
     const data = await fetchUserCompare(userId);
-    return res.json({ ok: true, ...data });
+    return res.json(data);
   })
 );
 
