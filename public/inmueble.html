@@ -11,15 +11,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Fraunces:ital,opsz,wght@0,9..144,600..800;1,9..144,400;1,9..144,700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
 
-  <!-- Leaflet & MarkerCluster CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin=""/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin=""/>
-
-  <!-- Leaflet & MarkerCluster JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
-
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/layout.css">
@@ -28,10 +19,8 @@
   <link rel="stylesheet" href="/css/responsive.css">
 
   <script defer src="/js/state.js"></script>
-  <script defer src="/js/auth.js"></script>
   <script defer src="/js/filters.js"></script>
   <script defer src="/js/render.js"></script>
-  <script defer src="/js/map.js"></script>
   <script defer src="/js/compare.js"></script>
   <script defer src="/js/modal.js"></script>
   <script defer src="/js/chat.js"></script>
@@ -66,8 +55,8 @@
       </nav>
 
       <div class="header__actions" id="header-user-zone">
-        <button id="btn-entrar" class="btn-entrar" style="display:none" onclick="abrirModalLogin()">
-          <span>Entrar</span>
+        <button id="btn-entrar" onclick="window.abrirModalLogin && window.abrirModalLogin()">
+          Entrar
         </button>
 
         <div id="usuario-dropdown" class="usuario-dropdown" style="display:none">
@@ -78,11 +67,11 @@
             <span id="usuario-nombre" class="usuario-nombre-texto"></span>
             <svg class="icon icon--sm" aria-hidden="true"><use href="/assets/icons.svg#icon-chevron-down"></use></svg>
           </button>
-          <div class="dropdown-menu" id="dropdown-menu-usuario" style="display:none;">
+          <div class="dropdown-menu" id="dropdown-menu-usuario">
             <a href="/publicar.html">Publicar vivienda</a>
             <a href="/guardados.html">Mis Guardados</a>
             <a href="/perfil.html">Mi Perfil</a>
-            <button onclick="HabiAuth.logout()">Cerrar sesión</button>
+            <button onclick="cerrarSesion()">Cerrar sesión</button>
           </div>
         </div>
       </div>
@@ -198,11 +187,6 @@
               <p style="font-size: var(--text-xs); color: var(--color-alert-text); margin-top: 2px;" id="detail-risk-text"></p>
             </div>
           </div>
-
-          <!-- Mapa del sector en detalle -->
-          <div class="map-stage-wrapper" style="margin-bottom: 0;">
-            <div class="map-canvas-container" id="detail-map-canvas" style="height: 340px;"></div>
-          </div>
         </section>
 
       </div>
@@ -309,54 +293,53 @@
   </div>
 
   <!-- MODAL DE AUTENTICACIÓN -->
-  <div id="modal-auth" onclick="if(event.target === this) cerrarModalAuth()" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0, 0, 0, 0.6); align-items: center; justify-content: center; padding: 16px;">
-    <div style="width: 100%; max-width: 420px; background: var(--color-sand, #F6F1E9); border: 2px solid var(--color-ink, #1F2937); border-radius: 12px; padding: 0; box-shadow: 6px 6px 0px var(--color-ink, #1F2937); overflow: hidden; font-family: var(--font-sans, 'DM Sans', sans-serif);">
-      <div style="padding: 16px 20px; border-bottom: 1.5px solid var(--color-ink); display: flex; justify-content: space-between; align-items: center; background: var(--color-cream, #FAF7F2);">
-        <h2 style="font-family: var(--font-serif, 'Fraunces', serif); font-size: 1.25rem; font-weight: 700; margin: 0; color: var(--color-ink);">Acceso HabitaBogotá</h2>
-        <button type="button" onclick="cerrarModalAuth()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; font-weight: 750;">✕</button>
+  <div id="modal-auth" onclick="if(event.target === this) cerrarModalAuth()" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(22, 32, 43, 0.65); align-items: center; justify-content: center; padding: 16px;">
+    <div style="width: 100%; max-width: 420px; background: var(--color-cream, #FAF7F2); border: 2px solid var(--color-ink, #16202B); border-radius: 12px; padding: 0; box-shadow: 6px 6px 0px var(--color-terracotta, #B4472B); overflow: hidden; font-family: var(--font-sans, 'DM Sans', sans-serif);">
+      <div style="padding: 16px 20px; border-bottom: 1.5px solid var(--color-ink, #16202B); display: flex; justify-content: space-between; align-items: center; background: var(--color-sand, #F6F1E9);">
+        <h2 style="font-family: var(--font-serif, 'Fraunces', serif); font-size: 1.25rem; font-weight: 700; margin: 0; color: var(--color-ink, #16202B);">Acceso HabitaBogotá</h2>
+        <button type="button" onclick="cerrarModalAuth()" aria-label="Cerrar" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; font-weight: 700; color: var(--color-ink, #16202B);">✕</button>
       </div>
-      <div style="display: flex; background: var(--color-cream); border-bottom: 1.5px solid var(--color-ink);">
-        <button type="button" id="tab-login-btn" onclick="cambiarTabAuth('login')" style="flex: 1; padding: 12px; border: none; background: var(--color-sand); font-weight: 700; cursor: pointer;">Iniciar Sesión</button>
-        <button type="button" id="tab-registro-btn" onclick="cambiarTabAuth('registro')" style="flex: 1; padding: 12px; border: none; background: transparent; font-weight: 500; cursor: pointer;">Crear Cuenta</button>
+      <div style="display: flex; background: var(--color-cream, #FAF7F2); border-bottom: 1.5px solid var(--color-ink, #16202B);">
+        <button type="button" id="tab-login-btn" onclick="cambiarTabAuth('login')" style="flex: 1; padding: 12px; border: none; background: var(--color-sand, #F6F1E9); font-weight: 700; cursor: pointer; color: var(--color-ink, #16202B);">Iniciar sesión</button>
+        <button type="button" id="tab-registro-btn" onclick="cambiarTabAuth('registro')" style="flex: 1; padding: 12px; border: none; background: transparent; font-weight: 500; cursor: pointer; color: var(--color-ink, #16202B);">Crear cuenta</button>
       </div>
       <div style="padding: 24px;">
-        <!-- Tab Login -->
-        <div id="form-login-tab" style="display: flex; flex-direction: column; gap: 14px;">
-          <div id="login-error-msg" style="color: var(--color-terracotta, #B4472B); font-size: 0.8rem; display: none; font-weight: 600;"></div>
+        <form id="form-login" onsubmit="event.preventDefault(); submitLogin();" style="display: flex; flex-direction: column; gap: 14px;">
           <div>
-            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Correo electrónico</label>
-            <input type="email" id="login-correo" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+            <label for="login-correo" style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; color: var(--color-ink, #16202B);">Correo electrónico</label>
+            <input type="email" id="login-correo" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; background: #fff;">
           </div>
           <div>
-            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Contraseña</label>
-            <input type="password" id="login-contrasena" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+            <label for="login-contrasena" style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; color: var(--color-ink, #16202B);">Contraseña</label>
+            <input type="password" id="login-contrasena" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; background: #fff;">
           </div>
-          <button type="button" onclick="submitLogin()" style="margin-top: 6px; width: 100%; padding: 12px; background: var(--color-terracotta, #B4472B); color: #fff; font-weight: 700; border: none; border-radius: 6px; cursor: pointer;">Entrar a HabitaBogotá</button>
-        </div>
-        <!-- Tab Registro -->
-        <div id="form-registro-tab" style="display: none; flex-direction: column; gap: 14px;">
-          <div id="registro-error-msg" style="color: var(--color-terracotta, #B4472B); font-size: 0.8rem; display: none; font-weight: 600;"></div>
+          <div id="login-error" style="color: var(--color-terracotta, #B4472B); font-size: 0.82rem; font-weight: 600; display: none;"></div>
+          <button type="button" onclick="submitLogin()" style="margin-top: 6px; width: 100%; padding: 12px; background: var(--color-terracotta, #B4472B); color: #fff; font-weight: 700; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; cursor: pointer;">Iniciar sesión</button>
+        </form>
+        <form id="form-registro" onsubmit="event.preventDefault(); submitRegistro();" style="display: none; flex-direction: column; gap: 14px;">
           <div>
-            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Nombre completo</label>
-            <input type="text" id="registro-nombre" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
-          </div>
-          <div>
-            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Correo electrónico</label>
-            <input type="email" id="registro-correo" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+            <label for="registro-nombre" style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; color: var(--color-ink, #16202B);">Nombre completo</label>
+            <input type="text" id="registro-nombre" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; background: #fff;">
           </div>
           <div>
-            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Contraseña (mínimo 8 caracteres)</label>
-            <input type="password" id="registro-contrasena" minlength="8" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+            <label for="registro-correo" style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; color: var(--color-ink, #16202B);">Correo electrónico</label>
+            <input type="email" id="registro-correo" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; background: #fff;">
           </div>
           <div>
-            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Confirmar contraseña</label>
-            <input type="password" id="registro-confirmar" minlength="8" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink); border-radius: 6px; background: #fff;">
+            <label for="registro-contrasena" style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; color: var(--color-ink, #16202B);">Contraseña (mínimo 8 caracteres)</label>
+            <input type="password" id="registro-contrasena" minlength="8" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; background: #fff;">
           </div>
-          <button type="button" onclick="submitRegistro()" style="margin-top: 6px; width: 100%; padding: 12px; background: var(--color-terracotta, #B4472B); color: #fff; font-weight: 700; border: none; border-radius: 6px; cursor: pointer;">Registrarse gratis</button>
-        </div>
+          <div>
+            <label for="registro-confirmar" style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; color: var(--color-ink, #16202B);">Confirmar contraseña</label>
+            <input type="password" id="registro-confirmar" minlength="8" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; background: #fff;">
+          </div>
+          <div id="registro-error" style="color: var(--color-terracotta, #B4472B); font-size: 0.82rem; font-weight: 600; display: none;"></div>
+          <button type="button" onclick="submitRegistro()" style="margin-top: 6px; width: 100%; padding: 12px; background: var(--color-terracotta, #B4472B); color: #fff; font-weight: 700; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; cursor: pointer;">Crear cuenta</button>
+        </form>
       </div>
     </div>
   </div>
 
+  <script src="/js/auth.js"></script>
 </body>
 </html>

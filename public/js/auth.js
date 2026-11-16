@@ -9,32 +9,32 @@ window.cerrarModalAuth = function() {
 };
 
 window.cambiarTabAuth = function(tab) {
-  var loginForm = document.getElementById('form-login');
-  var regForm = document.getElementById('form-registro');
+  var formLogin = document.getElementById('form-login');
+  var formRegistro = document.getElementById('form-registro');
   var tabLogin = document.getElementById('tab-login-btn');
-  var tabReg = document.getElementById('tab-registro-btn');
+  var tabRegistro = document.getElementById('tab-registro-btn');
 
-  if (tab === 'login') {
-    if (loginForm) loginForm.style.display = 'flex';
-    if (regForm) regForm.style.display = 'none';
-    if (tabLogin) {
-      tabLogin.style.background = 'var(--color-sand, #F6F1E9)';
-      tabLogin.style.fontWeight = '700';
-    }
-    if (tabReg) {
-      tabReg.style.background = 'transparent';
-      tabReg.style.fontWeight = '500';
-    }
-  } else {
-    if (loginForm) loginForm.style.display = 'none';
-    if (regForm) regForm.style.display = 'flex';
-    if (tabReg) {
-      tabReg.style.background = 'var(--color-sand, #F6F1E9)';
-      tabReg.style.fontWeight = '700';
+  if (tab === 'registro') {
+    if (formLogin) formLogin.style.display = 'none';
+    if (formRegistro) formRegistro.style.display = 'flex';
+    if (tabRegistro) {
+      tabRegistro.style.background = 'var(--color-sand, #F6F1E9)';
+      tabRegistro.style.fontWeight = '700';
     }
     if (tabLogin) {
       tabLogin.style.background = 'transparent';
       tabLogin.style.fontWeight = '500';
+    }
+  } else {
+    if (formLogin) formLogin.style.display = 'flex';
+    if (formRegistro) formRegistro.style.display = 'none';
+    if (tabLogin) {
+      tabLogin.style.background = 'var(--color-sand, #F6F1E9)';
+      tabLogin.style.fontWeight = '700';
+    }
+    if (tabRegistro) {
+      tabRegistro.style.background = 'transparent';
+      tabRegistro.style.fontWeight = '500';
     }
   }
 };
@@ -42,19 +42,13 @@ window.cambiarTabAuth = function(tab) {
 window.toggleDropdownUsuario = function() {
   var menu = document.getElementById('dropdown-menu-usuario');
   if (menu) {
-    if (menu.classList.contains('abierto') || menu.style.display === 'block' || menu.style.display === 'flex') {
-      menu.classList.remove('abierto');
-      menu.style.display = 'none';
-    } else {
-      menu.classList.add('abierto');
-      menu.style.display = 'block';
-    }
+    menu.classList.toggle('abierto');
   }
 };
 
 window.submitLogin = function() {
-  var correoInput = document.getElementById('login-correo');
-  var passInput = document.getElementById('login-contrasena');
+  var correoEl = document.getElementById('login-correo');
+  var passEl = document.getElementById('login-contrasena');
   var errEl = document.getElementById('login-error');
 
   if (errEl) {
@@ -62,12 +56,12 @@ window.submitLogin = function() {
     errEl.style.display = 'none';
   }
 
-  var correo = correoInput ? correoInput.value.trim() : '';
-  var contrasena = passInput ? passInput.value : '';
+  var correo = correoEl ? correoEl.value.trim() : '';
+  var contrasena = passEl ? passEl.value : '';
 
   if (!correo || !contrasena) {
     if (errEl) {
-      errEl.textContent = 'Por favor completa todos los campos.';
+      errEl.textContent = 'Por favor ingresa tu correo y contraseña.';
       errEl.style.display = 'block';
     }
     return;
@@ -79,9 +73,9 @@ window.submitLogin = function() {
     credentials: 'include',
     body: JSON.stringify({ correo: correo, contrasena: contrasena })
   })
-    .then(function(res) {
-      return res.json().then(function(data) {
-        if (!res.ok) {
+    .then(function(r) {
+      return r.json().then(function(data) {
+        if (!r.ok) {
           throw new Error(data.mensaje || data.error || 'Correo o contraseña incorrectos.');
         }
         return data;
@@ -91,24 +85,21 @@ window.submitLogin = function() {
       if (data && data.usuario) {
         actualizarHeaderAutenticado(data.usuario);
         window.cerrarModalAuth();
-        if (window.location.pathname.includes('/perfil')) {
-          window.location.reload();
-        }
       }
     })
     .catch(function(err) {
       if (errEl) {
-        errEl.textContent = err.message;
+        errEl.textContent = err.message || 'Error al iniciar sesión.';
         errEl.style.display = 'block';
       }
     });
 };
 
 window.submitRegistro = function() {
-  var nombreInput = document.getElementById('registro-nombre');
-  var correoInput = document.getElementById('registro-correo');
-  var passInput = document.getElementById('registro-contrasena');
-  var confirmInput = document.getElementById('registro-confirmar');
+  var nombreEl = document.getElementById('registro-nombre');
+  var correoEl = document.getElementById('registro-correo');
+  var passEl = document.getElementById('registro-contrasena');
+  var confirmEl = document.getElementById('registro-confirmar');
   var errEl = document.getElementById('registro-error');
 
   if (errEl) {
@@ -116,22 +107,14 @@ window.submitRegistro = function() {
     errEl.style.display = 'none';
   }
 
-  var nombre = nombreInput ? nombreInput.value.trim() : '';
-  var correo = correoInput ? correoInput.value.trim() : '';
-  var contrasena = passInput ? passInput.value : '';
-  var confirmar = confirmInput ? confirmInput.value : '';
+  var nombre = nombreEl ? nombreEl.value.trim() : '';
+  var correo = correoEl ? correoEl.value.trim() : '';
+  var contrasena = passEl ? passEl.value : '';
+  var confirmar = confirmEl ? confirmEl.value : '';
 
   if (!nombre || !correo || !contrasena || !confirmar) {
     if (errEl) {
       errEl.textContent = 'Por favor completa todos los campos.';
-      errEl.style.display = 'block';
-    }
-    return;
-  }
-
-  if (contrasena !== confirmar) {
-    if (errEl) {
-      errEl.textContent = 'Las contraseñas no coinciden.';
       errEl.style.display = 'block';
     }
     return;
@@ -145,16 +128,24 @@ window.submitRegistro = function() {
     return;
   }
 
+  if (contrasena !== confirmar) {
+    if (errEl) {
+      errEl.textContent = 'Las contraseñas no coinciden.';
+      errEl.style.display = 'block';
+    }
+    return;
+  }
+
   fetch('/api/auth/registro', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify({ nombre: nombre, correo: correo, contrasena: contrasena })
   })
-    .then(function(res) {
-      return res.json().then(function(data) {
-        if (!res.ok) {
-          throw new Error(data.mensaje || data.error || 'Error al registrar la cuenta.');
+    .then(function(r) {
+      return r.json().then(function(data) {
+        if (!r.ok) {
+          throw new Error(data.mensaje || data.error || 'No se pudo completar el registro.');
         }
         return data;
       });
@@ -163,14 +154,11 @@ window.submitRegistro = function() {
       if (data && data.usuario) {
         actualizarHeaderAutenticado(data.usuario);
         window.cerrarModalAuth();
-        if (window.location.pathname.includes('/perfil')) {
-          window.location.reload();
-        }
       }
     })
     .catch(function(err) {
       if (errEl) {
-        errEl.textContent = err.message;
+        errEl.textContent = err.message || 'Error al crear la cuenta.';
         errEl.style.display = 'block';
       }
     });
@@ -180,42 +168,42 @@ window.cerrarSesion = function() {
   fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
     .catch(function() {});
 
-  var btnEntrar = document.getElementById('btn-entrar');
-  var userDropdown = document.getElementById('usuario-dropdown');
-  if (btnEntrar) btnEntrar.style.display = 'flex';
-  if (userDropdown) userDropdown.style.display = 'none';
+  window.HabiAuth = { usuario: null };
 
-  if (window.location.pathname.includes('/perfil') || window.location.pathname.includes('/publicar')) {
-    window.location.href = '/index.html';
-  } else {
-    window.location.reload();
-  }
+  var btnEntrar = document.getElementById('btn-entrar');
+  var dropdown = document.getElementById('usuario-dropdown');
+  var menu = document.getElementById('dropdown-menu-usuario');
+  var nombreEl = document.getElementById('usuario-nombre');
+  var inicialesEl = document.getElementById('usuario-iniciales');
+
+  if (btnEntrar) btnEntrar.style.display = 'inline-flex';
+  if (dropdown) dropdown.style.display = 'none';
+  if (menu) menu.classList.remove('abierto');
+  if (nombreEl) nombreEl.textContent = '';
+  if (inicialesEl) inicialesEl.textContent = '';
 };
 
 function actualizarHeaderAutenticado(usuario) {
+  window.HabiAuth = { usuario: usuario };
+
   var btnEntrar = document.getElementById('btn-entrar');
-  var userDropdown = document.getElementById('usuario-dropdown');
-  var userNombre = document.getElementById('usuario-nombre');
-  var userIniciales = document.getElementById('usuario-iniciales');
+  var dropdown = document.getElementById('usuario-dropdown');
+  var nombreEl = document.getElementById('usuario-nombre');
+  var inicialesEl = document.getElementById('usuario-iniciales');
 
   if (btnEntrar) btnEntrar.style.display = 'none';
-  if (userDropdown) userDropdown.style.display = 'flex';
+  if (dropdown) dropdown.style.display = 'flex';
 
-  if (usuario && usuario.nombre) {
-    var partes = usuario.nombre.trim().split(' ');
-    if (userNombre) userNombre.textContent = partes[0] || '';
-    if (userIniciales) {
-      var iniciales = ((partes[0] ? partes[0][0] : '') + (partes[1] ? partes[1][0] : '')).toUpperCase();
-      userIniciales.textContent = iniciales || 'U';
-    }
-  }
+  var nombreCompleto = (usuario && usuario.nombre) ? usuario.nombre.trim() : '';
+  var partes = nombreCompleto ? nombreCompleto.split(/\s+/) : [];
+  var primerNombre = partes[0] || '';
+  var iniciales = ((partes[0] ? partes[0][0] : '') + (partes[1] ? partes[1][0] : '')).toUpperCase() || (primerNombre.slice(0, 2).toUpperCase() || 'U');
+
+  if (nombreEl) nombreEl.textContent = primerNombre;
+  if (inicialesEl) inicialesEl.textContent = iniciales;
 }
 
 fetch('/api/auth/yo', { credentials: 'include' })
   .then(function(r) { return r.ok ? r.json() : null; })
-  .then(function(data) {
-    if (data && data.usuario) {
-      actualizarHeaderAutenticado(data.usuario);
-    }
-  })
+  .then(function(data) { if (data && data.usuario) actualizarHeaderAutenticado(data.usuario); })
   .catch(function() {});

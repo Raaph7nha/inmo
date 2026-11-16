@@ -113,8 +113,6 @@ async function initIndexPage() {
       if (emptyBox) emptyBox.style.display = 'none';
       gridContainer.innerHTML = items.map(renderPropertyCardHTML).join('');
     }
-
-    updateMapMarkers(items);
   }
 
   async function fetchAndRenderResults() {
@@ -150,7 +148,6 @@ async function initIndexPage() {
         'No pudimos cargar los inmuebles, intenta de nuevo',
         'window.retryCurrentLoad()'
       );
-      updateMapMarkers([]);
     }
   }
 
@@ -482,11 +479,6 @@ async function initPropertyDetailPage() {
     } else {
       riskBox.style.display = 'none';
     }
-  }
-
-  const detailMap = document.getElementById('detail-map-canvas');
-  if (detailMap) {
-    initPropertyDetailLeafletMap(item);
   }
 
   const btnFav = document.getElementById('btn-detail-fav');
