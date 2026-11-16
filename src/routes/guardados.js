@@ -53,6 +53,18 @@ async function fetchUserSaved(userId) {
   };
 }
 
+// GET /api/guardados/diagnostico-guardados
+router.get(
+  '/diagnostico-guardados',
+  asyncHandler(async (req, res) => {
+    if (!isDatabaseConfigured()) {
+      return res.json({ ok: true, message: 'DB not configured', guardados: [] });
+    }
+    const resDb = await query('SELECT * FROM guardados');
+    return res.json({ ok: true, guardados: resDb.rows });
+  })
+);
+
 router.use(optionalAuth);
 
 // GET /api/guardados
@@ -60,6 +72,7 @@ router.get(
   '/',
   asyncHandler(async (req, res) => {
     const userId = req.usuario?.id;
+    console.log('[Guardados] GET /api/guardados usuario_id:', userId);
     if (!userId) {
       return res.json({
         ok: true,
@@ -70,6 +83,7 @@ router.get(
       });
     }
     const data = await fetchUserSaved(userId);
+    console.log('[Guardados] Respuesta /api/guardados:', JSON.stringify(data));
     return res.json(data);
   })
 );

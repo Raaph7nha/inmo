@@ -509,20 +509,33 @@
     appendTypingIndicator();
 
     try {
-      const payloadHistorial = ChatState.historial.slice(-10).map((m) => ({
+      const mensaje = clean;
+      const historial = ChatState.historial.slice(-10).map((m) => ({
         rol: m.rol,
         contenido: m.contenido
       }));
 
-      const data = await apiFetch('/api/chat', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
-        body: JSON.stringify({
-          mensaje: clean,
-          historial: payloadHistorial
-        })
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Sesion-Id': AppState.sesionId
+        },
+        credentials: 'include',
+        body: JSON.stringify({ mensaje, historial })
       });
 
+      const data = await response.json().catch(() => null);
       removeTypingIndicator();
+
+      if (!response.ok || !data || !data.respuesta) {
+        throw new Error(data?.respuesta || data?.error || 'Error al comunicarse con el asistente.');
+      }
+
+      if (data.ok === false) {
+        appendErrorMessage(data.respuesta, clean);
+        return;
+      }
 
       ChatState.historial.push({ rol: 'user', contenido: clean });
       ChatState.historial.push({ rol: 'assistant', contenido: data.respuesta });

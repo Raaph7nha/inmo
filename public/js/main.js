@@ -323,11 +323,28 @@ async function initPropertyDetailPage() {
 
   await syncSessionLists();
 
-  let item;
   try {
     const data = await apiFetch(`/api/inmuebles/${propertyId}`);
-    item = data.inmueble;
-    cacheInmuebles([item]);
+    console.log('[Detalle] Respuesta completa:', JSON.stringify(data));
+
+    const v = data?.data || data?.vivienda || data;
+    vivienda = v?.data || v;
+
+    const precio = parseFloat(vivienda?.precio || vivienda?.canon || 0);
+    const admon = parseFloat(vivienda?.administracion || vivienda?.admon || 0);
+    const habitaciones = vivienda?.habitaciones || vivienda?.num_habitaciones || vivienda?.rooms || '—';
+    const banos = vivienda?.banos || vivienda?.num_banos || vivienda?.bathrooms || '—';
+    const area = vivienda?.area_m2 || vivienda?.area || vivienda?.metros || '—';
+    const imagenes = vivienda?.imagenes || vivienda?.fotos || vivienda?.images || [];
+
+    vivienda.precio = precio;
+    vivienda.administracion = admon;
+    vivienda.habitaciones = habitaciones;
+    vivienda.banos = banos;
+    vivienda.area_m2 = area;
+    vivienda.imagenes = imagenes;
+
+    cacheInmuebles([vivienda]);
   } catch (err) {
     const mainEl = document.getElementById('main-content');
     if (mainEl) {
@@ -341,68 +358,76 @@ async function initPropertyDetailPage() {
     return;
   }
 
-  document.title = `${item.titulo} — HabitaBogotá`;
+  document.title = `${vivienda.titulo} — HabitaBogotá`;
 
   const titleEl = document.getElementById('detail-title');
-  if (titleEl) titleEl.textContent = item.titulo;
+  if (titleEl) titleEl.textContent = vivienda.titulo;
 
   const addressEl = document.getElementById('detail-address');
   if (addressEl) {
     addressEl.innerHTML = `
       <svg class="icon icon--sm" aria-hidden="true"><use href="/assets/icons.svg#icon-map"></use></svg>
-      <span>${escapeHTML(item.barrio)} (${escapeHTML(item.localidad)}) · ${escapeHTML(item.direccion_aprox)}</span>
+      <span>${escapeHTML(vivienda.barrio)} (${escapeHTML(vivienda.localidad)}) · ${escapeHTML(vivienda.direccion_aprox || vivienda.direccion || '')}</span>
     `;
   }
 
   const descEl = document.getElementById('detail-description');
-  if (descEl) descEl.textContent = item.descripcion;
+  if (descEl) descEl.textContent = vivienda.descripcion;
 
   const stampEl = document.getElementById('detail-stamp');
   if (stampEl) {
-    stampEl.textContent = item.operacion.toUpperCase();
-    stampEl.className = `stamp-seal ${item.operacion === 'arriendo' ? 'stamp-seal--rent' : 'stamp-seal--sale'}`;
+    stampEl.textContent = (vivienda.operacion || '').toUpperCase();
+    stampEl.className = `stamp-seal ${vivienda.operacion === 'arriendo' ? 'stamp-seal--rent' : 'stamp-seal--sale'}`;
   }
 
   const mainPhoto = document.getElementById('detail-photo-main');
-  const imgs = item.imagenes || [];
-  if (mainPhoto) mainPhoto.src = imgs[0] || '';
+  const mainPhotoContainer = document.querySelector('.detail-gallery__main');
+  const imagenes = Array.isArray(vivienda.imagenes) ? vivienda.imagenes : [];
+
+  if (imagenes.length === 0) {
+    if (mainPhoto) mainPhoto.style.display = 'none';
+    if (mainPhotoContainer) mainPhotoContainer.style.background = '#E7DCCB';
+  } else {
+    if (mainPhoto) {
+      mainPhoto.style.display = 'block';
+      const firstImg = imagenes[0];
+      mainPhoto.src = typeof firstImg === 'string' ? firstImg : (firstImg.url || '');
+    }
+  }
 
   const thumb1 = document.getElementById('detail-photo-thumb-1');
-  if (thumb1) {
-    thumb1.src = imgs[1] || imgs[0] || '';
-    thumb1.onclick = () => {
-      if (mainPhoto) mainPhoto.src = thumb1.src;
-    };
-  }
   const thumb2 = document.getElementById('detail-photo-thumb-2');
+  const getImgUrl = (img) => (typeof img === 'string' ? img : (img?.url || ''));
+
+  if (thumb1) {
+    const u1 = getImgUrl(imagenes[1] || imagenes[0]);
+    thumb1.src = u1;
+    thumb1.onclick = () => { if (mainPhoto && u1) mainPhoto.src = u1; };
+  }
   if (thumb2) {
-    thumb2.src = imgs[2] || imgs[0] || '';
-    thumb2.onclick = () => {
-      if (mainPhoto) mainPhoto.src = thumb2.src;
-    };
+    const u2 = getImgUrl(imagenes[2] || imagenes[0]);
+    thumb2.src = u2;
+    thumb2.onclick = () => { if (mainPhoto && u2) mainPhoto.src = u2; };
   }
 
   const specsRow = document.getElementById('detail-specs-row');
   if (specsRow) {
     specsRow.innerHTML = `
-      <div class="spec-entry"><svg class="icon icon--sm"><use href="/assets/icons.svg#icon-bed"></use></svg> <strong>${item.habitaciones}</strong> Habitaciones</div>
-      <div class="spec-entry"><svg class="icon icon--sm"><use href="/assets/icons.svg#icon-bath"></use></svg> <strong>${item.banos}</strong> Baños</div>
-      <div class="spec-entry"><svg class="icon icon--sm"><use href="/assets/icons.svg#icon-area"></use></svg> <strong>${item.area_m2}</strong> m² Área Privada</div>
-      <div class="spec-entry"><svg class="icon icon--sm"><use href="/assets/icons.svg#icon-building"></use></svg> <strong>${escapeHTML(item.tipo.toUpperCase())}</strong></div>
+      <div class="spec-entry"><svg class="icon icon--sm"><use href="/assets/icons.svg#icon-bed"></use></svg> <strong>${vivienda.habitaciones}</strong> Habitaciones</div>
+      <div class="spec-entry"><svg class="icon icon--sm"><use href="/assets/icons.svg#icon-bath"></use></svg> <strong>${vivienda.banos}</strong> Baños</div>
+      <div class="spec-entry"><svg class="icon icon--sm"><use href="/assets/icons.svg#icon-area"></use></svg> <strong>${vivienda.area_m2}</strong> m² Área Privada</div>
+      <div class="spec-entry"><svg class="icon icon--sm"><use href="/assets/icons.svg#icon-building"></use></svg> <strong>${escapeHTML(String(vivienda.tipo || '').toUpperCase())}</strong></div>
     `;
   }
 
-  const total = calculateTotalCost(item);
-  const canonEl = document.getElementById('detail-val-canon');
-  if (canonEl) canonEl.textContent = formatCOP(item.precio);
+  const formatCOP = n => new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(n);
+  const canon = document.getElementById('detail-val-canon');
+  const admon = document.getElementById('detail-val-admin');
+  const total = document.getElementById('detail-val-total');
 
-  const adminEl = document.getElementById('detail-val-admin');
-  if (adminEl) {
-    adminEl.textContent = item.administracion > 0 ? formatCOP(item.administracion) : '$0 (Sin costo)';
-  }
-
-  const totalEl = document.getElementById('detail-val-total');
-  if (totalEl) totalEl.textContent = formatCOP(total);
+  if (canon) canon.textContent = formatCOP(vivienda.precio);
+  if (admon) admon.textContent = formatCOP(vivienda.administracion);
+  if (total) total.textContent = formatCOP(vivienda.precio + vivienda.administracion);
 
   const btnWhatsapp = document.getElementById('detail-btn-whatsapp');
   if (btnWhatsapp) {

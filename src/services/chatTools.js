@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { searchInmuebles, getInmuebleById, getInmueblesByIds } from './inmueblesQuery.js';
+import { searchViviendas, getViviendaById, getViviendasByIds } from './viviendasQuery.js';
 
 export const CHAT_TOOLS_SCHEMA = [
   {
@@ -226,7 +226,7 @@ export async function executeChatTool(toolName, rawArgs) {
       mejor_puntaje: 'costo_asc'
     };
 
-    const dbResult = await searchInmuebles({
+    const dbResult = await searchViviendas({
       q: qMapped,
       tipo: args.tipo,
       operacion: args.operacion,
@@ -240,12 +240,21 @@ export async function executeChatTool(toolName, rawArgs) {
       piscina: args.piscina,
       porteria: args.porteria,
       tour_3d: args.tour_3d,
-      max_cuadras_transporte: args.max_cuadras_transporte,
       orden: ordenMap[args.ordenar_por || 'mejor_puntaje'],
       limite: 12
     });
 
-    let candidatos = dbResult.inmuebles;
+    let candidatos = dbResult.viviendas || [];
+
+    if (args.max_cuadras_transporte !== undefined) {
+      const maxCuadras = Number(args.max_cuadras_transporte);
+      const nearTransport = candidatos.filter(
+        (c) => (c.transporte?.distanciaCuadras ?? 99) <= maxCuadras
+      );
+      if (nearTransport.length > 0) {
+        candidatos = nearTransport;
+      }
+    }
 
     // Si buscó específicamente "universidad", priorizar zonas universitarias (Chapinero, Teusaquillo, La Candelaria)
     if (keyword && /universidad/i.test(keyword)) {
@@ -284,7 +293,7 @@ export async function executeChatTool(toolName, rawArgs) {
     if (!parsed.success) {
       return { ok: false, error: 'ID de inmueble inválido.' };
     }
-    const item = await getInmuebleById(parsed.data.id);
+    const item = await getViviendaById(parsed.data.id);
     if (!item) {
       return { ok: false, error: `No existe un inmueble con ID ${parsed.data.id}.` };
     }
@@ -307,7 +316,7 @@ export async function executeChatTool(toolName, rawArgs) {
     if (!parsed.success) {
       return { ok: false, error: 'Debes indicar entre 1 y 3 IDs válidos para comparar.' };
     }
-    const items = await getInmueblesByIds(parsed.data.ids);
+    const items = await getViviendasByIds(parsed.data.ids);
     if (!items.length) {
       return { ok: false, error: 'No se encontraron los inmuebles solicitados.' };
     }

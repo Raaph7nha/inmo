@@ -58,12 +58,19 @@ router.get(
       getBarriosResumen()
     ]);
 
-    return res.json({
+    const payload = {
+      items: result.inmuebles,
       inmuebles: result.inmuebles,
       total: result.total,
       pagina: result.pagina,
       limite: result.limite,
       barrios
+    };
+
+    return res.json({
+      ok: true,
+      data: payload,
+      ...payload
     });
   })
 );
@@ -77,7 +84,11 @@ router.get(
     if (!item) {
       throw new AppError('No encontramos el inmueble solicitado.', 404, 'PROPERTY_NOT_FOUND');
     }
-    return res.json({ inmueble: item });
+    return res.json({
+      ok: true,
+      data: item,
+      inmueble: item
+    });
   })
 );
 

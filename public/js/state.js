@@ -1,6 +1,6 @@
 /**
  * HABITABOGOTÁ — /public/js/state.js
- * Estado global, sesión UUID anónima, cliente fetch (/api/*) y sincronización entre pestañas.
+ * Estado global, sesión UUID anónima, cliente fetch (/api/*) con localStorage y sincronización entre pestañas.
  */
 
 const SESSION_KEY = 'habitabogota_sesion_uuid_v1';
@@ -29,7 +29,6 @@ function generateUUIDv4() {
   });
 }
 
-// Genera o recupera el UUID anónimo una vez (try/catch seguro)
 function getSessionId() {
   try {
     let id = localStorage.getItem(SESSION_KEY);
@@ -49,8 +48,8 @@ function getSessionId() {
 const AppState = {
   sesionId: getSessionId(),
   filtros: {
-    operacion: 'arriendo', // 'arriendo' | 'venta' | 'todos'
-    tipo: 'todos',        // 'todos' | 'apartamento' | 'casa' | 'local'
+    operacion: 'arriendo',
+    tipo: 'todos',
     keyword: '',
     precioMin: null,
     precioMax: null,
@@ -71,7 +70,7 @@ const AppState = {
   guardadosInmuebles: [],
   comparador: [],
   comparadorInmuebles: [],
-  inmueblesCache: {}, // Mapa id -> inmueble completo
+  inmueblesCache: {},
   capasMapa: {
     transporte: true,
     supermercados: true,
@@ -94,7 +93,6 @@ function getCachedInmueble(id) {
   return AppState.inmueblesCache[String(id)] || null;
 }
 
-// Formateador COP oficial con estándar colombiano
 function formatCOP(amount) {
   const num = Number(amount) || 0;
   return new Intl.NumberFormat('es-CO', {
@@ -104,7 +102,7 @@ function formatCOP(amount) {
   }).format(num);
 }
 
-// Cliente HTTP unificado hacia rutas relativas /api/...
+// Cliente HTTP unificado hacia rutas relativas /api/... con credentials: 'include'
 async function apiFetch(url, options = {}) {
   const headers = {
     'X-Sesion-Id': AppState.sesionId,
@@ -114,6 +112,7 @@ async function apiFetch(url, options = {}) {
 
   const response = await fetch(url, {
     ...options,
+    credentials: 'include',
     headers
   });
 
@@ -134,7 +133,6 @@ async function apiFetch(url, options = {}) {
   return data;
 }
 
-// Canal de sincronización entre pestañas (mismo origen)
 const syncChannel = typeof BroadcastChannel !== 'undefined'
   ? new BroadcastChannel('habitabogota_sync_v1')
   : null;
@@ -145,17 +143,13 @@ function broadcastCrossTabSync() {
   }
   try {
     localStorage.setItem(SYNC_EVENT_KEY, String(Date.now()));
-  } catch {
-    // Ignorar si almacenamiento restringido
-  }
+  } catch {}
 }
 
-// Suscripción a cambios de guardados / comparador / UI
 function subscribeState(callback) {
   AppState.listeners.push(callback);
 }
 
-// Suscripción a cambios exclusivos de filtros (para recargar /api/inmuebles)
 function subscribeFilters(callback) {
   AppState.filterListeners.push(callback);
 }
@@ -169,34 +163,68 @@ function notifyFiltersChange() {
   AppState.filterListeners.forEach((fn) => fn(AppState));
 }
 
+// Obtiene los objetos completos de inmuebles a partir de un array de IDs,
+// usando caché local o consultando GET /api/viviendas?ids=1,2,3
+async function fetchInmueblesForIds(ids) {
+  if (!Array.isArray(ids) || ids.length === 0) return [];
+  const missing = ids.filter((id) => !getCachedInmueble(id));
+
+  if (missing.length > 0) {
+    try {
+      const data = await apiFetch(`/api/viviendas?ids=${missing.join(',')}`);
+      const fetched = Array.isArray(data.data) ? data.data : (Array.isArray(data.viviendas) ? data.viviendas : []);
+      cacheInmuebles(fetched);
+    } catch {
+      // Si falla la consulta masiva, intentamos buscar en resultados actuales si los hay
+    }
+  }
+
+  return ids.map((id) => getCachedInmueble(id)).filter(Boolean);
+}
+
 // Sincroniza Guardados y Comparador (API si autenticado, localStorage si anónimo)
 async function syncSessionLists() {
   if (!window.usuarioActual) {
     try {
-      const savedIds = JSON.parse(localStorage.getItem('habitabogota_guardados_local') || '[]');
-      const compareIds = JSON.parse(localStorage.getItem('habitabogota_comparador_local') || '[]');
+      const savedIds = JSON.parse(localStorage.getItem('habi_guardados') || '[]');
+      const compareIds = JSON.parse(localStorage.getItem('habi_comparador') || '[]');
       AppState.guardados = savedIds.map(Number);
       AppState.comparador = compareIds.map(Number);
-      AppState.guardadosInmuebles = AppState.guardados.map(id => getCachedInmueble(id)).filter(Boolean);
-      AppState.comparadorInmuebles = AppState.comparador.map(id => getCachedInmueble(id)).filter(Boolean);
+
+      [AppState.guardadosInmuebles, AppState.comparadorInmuebles] = await Promise.all([
+        fetchInmueblesForIds(AppState.guardados),
+        fetchInmueblesForIds(AppState.comparador)
+      ]);
+
       notifyStateChange();
     } catch {
       AppState.guardados = [];
       AppState.comparador = [];
+      AppState.guardadosInmuebles = [];
+      AppState.comparadorInmuebles = [];
+      notifyStateChange();
     }
     return;
   }
 
   try {
-    const [savedData, compareData] = await Promise.all([
+    const [savedRes, compareRes] = await Promise.all([
       apiFetch('/api/guardados'),
       apiFetch('/api/comparador')
     ]);
 
-    AppState.guardados = Array.isArray(savedData.ids) ? savedData.ids.map(Number) : [];
-    AppState.guardadosInmuebles = Array.isArray(savedData.inmuebles) ? savedData.inmuebles : [];
-    AppState.comparador = Array.isArray(compareData.ids) ? compareData.ids.map(Number) : [];
-    AppState.comparadorInmuebles = Array.isArray(compareData.inmuebles) ? compareData.inmuebles : [];
+    const savedData = savedRes.data || savedRes;
+    const compareData = compareRes.data || compareRes;
+
+    const savedIds = savedData.ids || savedData.data?.ids || [];
+    const savedItems = savedData.items || savedData.inmuebles || savedData.data?.items || savedData.data?.inmuebles || [];
+    const compareIds = compareData.ids || compareData.data?.ids || [];
+    const compareItems = compareData.items || compareData.inmuebles || compareData.data?.items || compareData.data?.inmuebles || [];
+
+    AppState.guardados = Array.isArray(savedIds) ? savedIds.map(Number) : [];
+    AppState.guardadosInmuebles = Array.isArray(savedItems) ? savedItems : [];
+    AppState.comparador = Array.isArray(compareIds) ? compareIds.map(Number) : [];
+    AppState.comparadorInmuebles = Array.isArray(compareItems) ? compareItems : [];
 
     cacheInmuebles(AppState.guardadosInmuebles);
     cacheInmuebles(AppState.comparadorInmuebles);
@@ -206,7 +234,7 @@ async function syncSessionLists() {
   }
 }
 
-// Alternar inmueble en Guardados (localStorage si anónimo, API si autenticado)
+// Alternar inmueble en Guardados
 async function toggleSaveProperty(rawId) {
   const id = Number(rawId);
   const isCurrentlySaved = AppState.guardados.includes(id);
@@ -216,23 +244,25 @@ async function toggleSaveProperty(rawId) {
   if (!window.usuarioActual) {
     let savedIds = [];
     try {
-      savedIds = JSON.parse(localStorage.getItem('habitabogota_guardados_local') || '[]').map(Number);
+      savedIds = JSON.parse(localStorage.getItem('habi_guardados') || '[]').map(Number);
     } catch {
       savedIds = [];
     }
 
     if (isCurrentlySaved) {
-      savedIds = savedIds.filter(i => i !== id);
-      AppState.guardadosInmuebles = AppState.guardadosInmuebles.filter(i => i.id !== id);
+      savedIds = savedIds.filter((i) => i !== id);
+      AppState.guardadosInmuebles = AppState.guardadosInmuebles.filter((i) => i.id !== id);
     } else {
       if (!savedIds.includes(id)) savedIds.push(id);
-      if (item && !AppState.guardadosInmuebles.some(i => i.id === id)) {
+      if (item && !AppState.guardadosInmuebles.some((i) => i.id === id)) {
         AppState.guardadosInmuebles.push(item);
       }
     }
-    localStorage.setItem('habitabogota_guardados_local', JSON.stringify(savedIds));
+    localStorage.setItem('habi_guardados', JSON.stringify(savedIds));
     AppState.guardados = savedIds;
-    cacheInmuebles(AppState.guardadosInmuebles);
+
+    // Asegurar que guardadosInmuebles esté actualizado si el ítem estaba en caché
+    AppState.guardadosInmuebles = await fetchInmueblesForIds(AppState.guardados);
 
     showToast(
       isCurrentlySaved
@@ -245,15 +275,16 @@ async function toggleSaveProperty(rawId) {
   }
 
   try {
-    const data = isCurrentlySaved
+    const res = isCurrentlySaved
       ? await apiFetch(`/api/guardados/${id}`, { method: 'DELETE' })
       : await apiFetch('/api/guardados', {
           method: 'POST',
           body: JSON.stringify({ inmueble_id: id })
         });
 
-    AppState.guardados = (data.ids || []).map(Number);
-    AppState.guardadosInmuebles = data.inmuebles || data.items || [];
+    const payload = res.data || res;
+    AppState.guardados = (payload.ids || []).map(Number);
+    AppState.guardadosInmuebles = payload.items || payload.inmuebles || [];
     cacheInmuebles(AppState.guardadosInmuebles);
 
     showToast(
@@ -269,7 +300,7 @@ async function toggleSaveProperty(rawId) {
   }
 }
 
-// Alternar inmueble en Comparador (localStorage si anónimo, API si autenticado)
+// Alternar inmueble en Comparador
 async function toggleCompareProperty(rawId, forceAdd = null) {
   const id = Number(rawId);
   const isCurrentlyIn = AppState.comparador.includes(id);
@@ -279,7 +310,7 @@ async function toggleCompareProperty(rawId, forceAdd = null) {
   if (!window.usuarioActual) {
     let compareIds = [];
     try {
-      compareIds = JSON.parse(localStorage.getItem('habitabogota_comparador_local') || '[]').map(Number);
+      compareIds = JSON.parse(localStorage.getItem('habi_comparador') || '[]').map(Number);
     } catch {
       compareIds = [];
     }
@@ -290,17 +321,17 @@ async function toggleCompareProperty(rawId, forceAdd = null) {
         return false;
       }
       if (!compareIds.includes(id)) compareIds.push(id);
-      if (item && !AppState.comparadorInmuebles.some(i => i.id === id)) {
+      if (item && !AppState.comparadorInmuebles.some((i) => i.id === id)) {
         AppState.comparadorInmuebles.push(item);
       }
     } else {
-      compareIds = compareIds.filter(i => i !== id);
-      AppState.comparadorInmuebles = AppState.comparadorInmuebles.filter(i => i.id !== id);
+      compareIds = compareIds.filter((i) => i !== id);
+      AppState.comparadorInmuebles = AppState.comparadorInmuebles.filter((i) => i.id !== id);
     }
 
-    localStorage.setItem('habitabogota_comparador_local', JSON.stringify(compareIds));
+    localStorage.setItem('habi_comparador', JSON.stringify(compareIds));
     AppState.comparador = compareIds;
-    cacheInmuebles(AppState.comparadorInmuebles);
+    AppState.comparadorInmuebles = await fetchInmueblesForIds(AppState.comparador);
 
     showToast(
       shouldAdd
@@ -313,15 +344,16 @@ async function toggleCompareProperty(rawId, forceAdd = null) {
   }
 
   try {
-    const data = shouldAdd
+    const res = shouldAdd
       ? await apiFetch('/api/comparador', {
           method: 'POST',
           body: JSON.stringify({ inmueble_id: id })
         })
       : await apiFetch(`/api/comparador/${id}`, { method: 'DELETE' });
 
-    AppState.comparador = (data.ids || []).map(Number);
-    AppState.comparadorInmuebles = data.inmuebles || data.items || [];
+    const payload = res.data || res;
+    AppState.comparador = (payload.ids || []).map(Number);
+    AppState.comparadorInmuebles = payload.items || payload.inmuebles || [];
     cacheInmuebles(AppState.comparadorInmuebles);
 
     showToast(
@@ -344,6 +376,16 @@ async function toggleCompareProperty(rawId, forceAdd = null) {
 }
 
 async function clearAllComparison() {
+  if (!window.usuarioActual) {
+    localStorage.removeItem('habi_comparador');
+    AppState.comparador = [];
+    AppState.comparadorInmuebles = [];
+    broadcastCrossTabSync();
+    notifyStateChange();
+    showToast('Comparador vaciado');
+    return;
+  }
+
   try {
     await apiFetch('/api/comparador', { method: 'DELETE' });
     AppState.comparador = [];
@@ -356,7 +398,6 @@ async function clearAllComparison() {
   }
 }
 
-// Actualizar contadores en la barra de navegación y móvil
 function updateCountersUI() {
   const countSaved = AppState.guardados.length;
   const countCompare = AppState.comparador.length;

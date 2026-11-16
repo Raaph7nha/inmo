@@ -54,6 +54,18 @@ async function fetchUserCompare(userId) {
   };
 }
 
+// GET /api/comparador/diagnostico-comparador
+router.get(
+  '/diagnostico-comparador',
+  asyncHandler(async (req, res) => {
+    if (!isDatabaseConfigured()) {
+      return res.json({ ok: true, message: 'DB not configured', comparador: [] });
+    }
+    const resDb = await query('SELECT * FROM comparador');
+    return res.json({ ok: true, comparador: resDb.rows });
+  })
+);
+
 router.use(optionalAuth);
 
 // GET /api/comparador
@@ -61,6 +73,7 @@ router.get(
   '/',
   asyncHandler(async (req, res) => {
     const userId = req.usuario?.id;
+    console.log('[Comparador] GET /api/comparador usuario_id:', userId);
     if (!userId) {
       return res.json({
         ok: true,
@@ -71,6 +84,7 @@ router.get(
       });
     }
     const data = await fetchUserCompare(userId);
+    console.log('[Comparador] Respuesta /api/comparador:', JSON.stringify(data));
     return res.json(data);
   })
 );

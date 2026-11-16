@@ -6,10 +6,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { isDatabaseConfigured, query } from '../db.js';
-import { asyncHandler } from '../middleware/errorHandler.js';
 import { chatLimiter } from '../middleware/rateLimit.js';
 import { optionalAuth } from '../middleware/auth.js';
-import { sanitizeText, validateBody } from '../middleware/validate.js';
+import { sanitizeText } from '../middleware/validate.js';
 import { runChatAssistant } from '../services/groq.js';
 import { memoryStore } from '../services/memoryStore.js';
 
@@ -31,61 +30,93 @@ const chatBodySchema = z.object({
 });
 
 // POST /api/chat
-router.post(
-  '/',
-  chatLimiter,
-  optionalAuth,
-  validateBody(chatBodySchema),
-  asyncHandler(async (req, res) => {
-    const { mensaje, historial } = req.validatedBody;
+router.post('/', chatLimiter, optionalAuth, async (req, res) => {
+  try {
+    const parsed = chatBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        ok: false,
+        respuesta: parsed.error.issues[0]?.message || 'Escribe una pregunta válida para Habi.',
+        inmuebles: []
+      });
+    }
+
+    const { mensaje, historial } = parsed.data;
     const userId = req.usuario?.id || null;
     const usePg = isDatabaseConfigured();
 
-    // 1. Obtener IDs guardados si el usuario está autenticado
+    console.log('[Chat] Mensaje recibido:', mensaje);
+    console.log('[Chat] Modelo:', process.env.GROQ_MODEL);
+
+    // 1. Obtener IDs y objetos guardados si el usuario está autenticado
     let guardadosIds = [];
+    let viviendasGuardadas = [];
     if (userId) {
-      if (!usePg) {
-        guardadosIds = memoryStore.getGuardadosIds(userId);
-      } else {
-        const savedRes = await query(
-          'SELECT vivienda_id FROM guardados WHERE usuario_id = $1 ORDER BY creado_en DESC',
-          [userId]
-        );
-        guardadosIds = savedRes.rows.map((r) => Number(r.vivienda_id));
+      try {
+        if (!usePg) {
+          guardadosIds = memoryStore.getGuardadosIds(userId);
+          viviendasGuardadas = memoryStore.getInmueblesByIds(guardadosIds);
+        } else {
+          const savedRes = await query(
+            'SELECT v.* FROM guardados g JOIN viviendas v ON v.id = g.vivienda_id WHERE g.usuario_id = $1 ORDER BY g.creado_en DESC',
+            [userId]
+          );
+          viviendasGuardadas = savedRes.rows;
+          guardadosIds = viviendasGuardadas.map((r) => Number(r.id));
+        }
+      } catch (dbErr) {
+        console.error('[Chat] Error leyendo guardados:', dbErr.message);
       }
     }
 
     // 2. Guardar el turno del usuario si hay usuario
     if (userId && usePg) {
-      await query(
-        'INSERT INTO chat_mensajes (usuario_id, rol, contenido, viviendas_ids) VALUES ($1, $2, $3, $4)',
-        [userId, 'user', mensaje, []]
-      );
+      try {
+        await query(
+          'INSERT INTO chat_mensajes (usuario_id, rol, contenido, viviendas_ids) VALUES ($1, $2, $3, $4)',
+          [userId, 'user', mensaje, []]
+        );
+      } catch (dbErr) {
+        console.error('[Chat] Error guardando mensaje usuario:', dbErr.message);
+      }
     }
 
-    // 3. Ejecutar asistente Groq con bucle de herramientas
+    // 3. Ejecutar asistente Groq con bucle de herramientas y fallback simple
     const aiResult = await runChatAssistant({
       mensaje,
       historial,
-      guardadosIds
+      guardadosIds,
+      viviendasGuardadas
     });
 
-    const recommendedIds = aiResult.viviendas.map((x) => x.id);
+    const respuesta = aiResult?.respuesta || '';
+    const inmuebles = Array.isArray(aiResult?.inmuebles) ? aiResult.inmuebles : [];
+    const recommendedIds = inmuebles.map((x) => x.id);
+
+    console.log('[Chat] Respuesta Groq:', JSON.stringify(respuesta));
 
     // 4. Guardar respuesta del asistente
     if (userId && usePg) {
-      await query(
-        'INSERT INTO chat_mensajes (usuario_id, rol, contenido, viviendas_ids) VALUES ($1, $2, $3, $4)',
-        [userId, 'assistant', aiResult.respuesta, recommendedIds]
-      );
+      try {
+        await query(
+          'INSERT INTO chat_mensajes (usuario_id, rol, contenido, viviendas_ids) VALUES ($1, $2, $3, $4)',
+          [userId, 'assistant', respuesta, recommendedIds]
+        );
+      } catch (dbErr) {
+        console.error('[Chat] Error guardando respuesta asistente:', dbErr.message);
+      }
     }
 
     return res.json({
-      respuesta: aiResult.respuesta,
-      viviendas: aiResult.viviendas,
-      filtros_sugeridos: aiResult.filtros_sugeridos
+      ok: true,
+      respuesta,
+      inmuebles,
+      filtros_sugeridos: aiResult?.filtros_sugeridos || {}
     });
-  })
-);
+  } catch (error) {
+    console.error('[Chat] Error completo:', error.message, error.stack);
+    return res.json({ ok: false, respuesta: 'Error interno', inmuebles: [] });
+  }
+});
 
 export default router;

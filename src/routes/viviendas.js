@@ -155,7 +155,8 @@ router.get(
     if (!item) {
       throw new AppError('No encontramos la vivienda solicitada.', 404, 'PROPERTY_NOT_FOUND');
     }
-    return res.json({ vivienda: item });
+    console.log('[Detalle] Datos enviados al frontend:', JSON.stringify(item));
+    return res.json({ ok: true, data: item, vivienda: item });
   })
 );
 
