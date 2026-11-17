@@ -85,6 +85,11 @@ window.submitLogin = function() {
       if (data && data.usuario) {
         actualizarHeaderAutenticado(data.usuario);
         window.cerrarModalAuth();
+        if (window.HabiAuth && HabiAuth._accionPendiente) {
+          var accion = HabiAuth._accionPendiente;
+          HabiAuth._accionPendiente = null;
+          setTimeout(accion, 300);
+        }
       }
     })
     .catch(function(err) {
@@ -154,6 +159,11 @@ window.submitRegistro = function() {
       if (data && data.usuario) {
         actualizarHeaderAutenticado(data.usuario);
         window.cerrarModalAuth();
+        if (window.HabiAuth && HabiAuth._accionPendiente) {
+          var accion = HabiAuth._accionPendiente;
+          HabiAuth._accionPendiente = null;
+          setTimeout(accion, 300);
+        }
       }
     })
     .catch(function(err) {

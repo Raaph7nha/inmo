@@ -25,6 +25,7 @@
   <script defer src="/js/modal.js"></script>
   <script defer src="/js/chat.js"></script>
   <script defer src="/js/main.js"></script>
+  <script defer src="/js/inmueble.js"></script>
 </head>
 <body>
 
@@ -231,10 +232,11 @@
           </a>
 
           <!-- Botón Programar Visita (requiere login) -->
-          <button type="button" class="btn btn--primary" onclick="programarVisita(new URLSearchParams(window.location.search).get('id'))" style="width: 100%; min-height: 50px; font-size: var(--text-md); background: var(--color-terracotta); color: #fff; font-weight: 700; border: none; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: var(--space-4);">
+          <button type="button" class="btn btn--primary" onclick="programarVisita(new URLSearchParams(window.location.search).get('id'))" style="width: 100%; min-height: 50px; font-size: var(--text-md); background: var(--color-terracotta); color: #fff; font-weight: 700; border: none; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 4px;">
             <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#icon-calendar"></use></svg>
             <span>Programar Visita</span>
           </button>
+          <p id="aviso-visita" style="display:none; color:#B4472B; font-size:0.875rem; margin-top:8px; margin-bottom: var(--space-4);"></p>
 
 
           <!-- Caja de Requisitos Legales para Arrendar (Persona Valeria) -->
@@ -336,6 +338,44 @@
           <div id="registro-error" style="color: var(--color-terracotta, #B4472B); font-size: 0.82rem; font-weight: 600; display: none;"></div>
           <button type="button" onclick="submitRegistro()" style="margin-top: 6px; width: 100%; padding: 12px; background: var(--color-terracotta, #B4472B); color: #fff; font-weight: 700; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; cursor: pointer;">Crear cuenta</button>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE VISITA -->
+  <div id="modal-visita" onclick="if(event.target === this) cerrarModalVisita()" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(22, 32, 43, 0.65); align-items: center; justify-content: center; padding: 16px;">
+    <div style="width: 100%; max-width: 440px; background: var(--color-cream, #FAF7F2); border: 2px solid var(--color-ink, #16202B); border-radius: 12px; padding: 0; box-shadow: 6px 6px 0px var(--color-terracotta, #B4472B); overflow: hidden; font-family: var(--font-sans, 'DM Sans', sans-serif);">
+      <div style="padding: 16px 20px; border-bottom: 1.5px solid var(--color-ink, #16202B); display: flex; justify-content: space-between; align-items: center; background: var(--color-sand, #F6F1E9);">
+        <h2 style="font-family: var(--font-serif, 'Fraunces', serif); font-size: 1.25rem; font-weight: 700; margin: 0; color: var(--color-ink, #16202B);">Programar Visita</h2>
+        <button type="button" onclick="cerrarModalVisita()" aria-label="Cerrar" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; font-weight: 700; color: var(--color-ink, #16202B);">✕</button>
+      </div>
+      <div style="padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <label for="visita-fecha" style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; color: var(--color-ink, #16202B);">Fecha preferida</label>
+          <input type="date" id="visita-fecha" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; background: #fff;">
+        </div>
+        <div>
+          <label for="visita-horario" style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; color: var(--color-ink, #16202B);">Horario</label>
+          <select id="visita-horario" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; background: #fff;">
+            <option value="mañana">Mañana (9:00 am - 12:00 pm)</option>
+            <option value="tarde">Tarde (2:00 pm - 6:00 pm)</option>
+            <option value="noche">Noche (6:00 pm - 8:00 pm)</option>
+          </select>
+        </div>
+        <div>
+          <label for="visita-nombre" style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; color: var(--color-ink, #16202B);">Nombre completo</label>
+          <input type="text" id="visita-nombre" readonly style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; background: var(--color-sand);">
+        </div>
+        <div>
+          <label for="visita-telefono" style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; color: var(--color-ink, #16202B);">Teléfono de contacto</label>
+          <input type="tel" id="visita-telefono" placeholder="Ej: 3001234567" required style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; background: #fff;">
+        </div>
+        <div>
+          <label for="visita-mensaje" style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; color: var(--color-ink, #16202B);">Mensaje o duda (opcional)</label>
+          <textarea id="visita-mensaje" rows="2" style="width: 100%; padding: 10px; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; background: #fff;"></textarea>
+        </div>
+        <div id="visita-error" style="color: var(--color-terracotta, #B4472B); font-size: 0.82rem; font-weight: 600;"></div>
+        <button type="button" id="btn-submit-visita" onclick="submitVisita()" style="margin-top: 6px; width: 100%; padding: 12px; background: var(--color-terracotta, #B4472B); color: #fff; font-weight: 700; border: 1.5px solid var(--color-ink, #16202B); border-radius: 6px; cursor: pointer;">Confirmar Visita</button>
       </div>
     </div>
   </div>
