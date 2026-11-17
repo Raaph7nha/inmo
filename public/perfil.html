@@ -105,74 +105,26 @@
   </footer>
 
   <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      await verificarSesion();
-      if (!window.usuarioActual) {
-        document.getElementById('main-content').innerHTML = `
-          <div style="text-align: center; padding: 60px 20px; background: var(--color-sand); border: 2px solid var(--color-ink); border-radius: 12px; max-width: 500px; margin: 40px auto;">
-            <h2 style="font-family: var(--font-serif); font-size: 1.5rem; margin-bottom: 12px;">Inicia sesión para ver tu panel</h2>
-            <p style="color: var(--color-ink-muted); margin-bottom: 20px;">Accede a tus visitas agendadas, guardados y preferencias en HabitaBogotá.</p>
-            <button class="btn btn--primary" onclick="abrirModalLogin()" style="background: var(--color-terracotta); color: #fff; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">Iniciar Sesión / Registrarse</button>
-          </div>
-        `;
-        return;
+    document.addEventListener('DOMContentLoaded', async function() {
+      const usuario = await window.HabiAuth.restaurarSesion 
+        ? await (async () => { 
+            await HabiAuth.restaurarSesion(); 
+            return HabiAuth.usuario; 
+          })()
+        : null
+
+      if (!usuario) {
+        window.location.href = '/index.html'
+        return
       }
 
-      document.getElementById('perfil-welcome-text').textContent = `Hola, ${window.usuarioActual.nombre} (${window.usuarioActual.correo}) — Rol: ${window.usuarioActual.rol}`;
-
-      // Cargar visitas
-      try {
-        const vRes = await fetch('/api/visitas/mias', { credentials: 'include' });
-        const vData = await vRes.json();
-        const vContainer = document.getElementById('visitas-list-container');
-        if (vData.ok && vData.visitas && vData.visitas.length > 0) {
-          vContainer.innerHTML = vData.visitas.map(visita => `
-            <div style="background: var(--color-cream); border: 1.5px solid var(--color-ink); border-radius: 8px; padding: 16px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
-              <div style="display: flex; gap: 14px; align-items: center;">
-                <img src="${visita.imagen_url || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=200&q=80'}" alt="${visita.titulo}" style="width: 80px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid var(--color-ink);">
-                <div>
-                  <h3 style="font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700; margin-bottom: 4px;">${escapeHTML(visita.titulo)}</h3>
-                  <p style="font-size: 0.8rem; color: var(--color-ink-muted); margin-bottom: 4px;">📍 ${escapeHTML(visita.barrio)} · 📅 ${visita.fecha_preferida} (${visita.horario})</p>
-                  <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; background: ${visita.estado === 'confirmada' ? '#E8F5E9' : visita.estado === 'cancelada' ? '#FFEBEE' : '#FFF9C4'}; color: ${visita.estado === 'confirmada' ? '#2E7D32' : visita.estado === 'cancelada' ? '#C62828' : '#F57F17'}; text-transform: uppercase;">
-                    Estado: ${visita.estado}
-                  </span>
-                </div>
-              </div>
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <a href="/inmueble.html?id=${visita.vivienda_id}" class="btn" style="background: var(--color-ink); color: var(--color-cream); padding: 8px 14px; border-radius: 6px; font-size: 0.8rem; text-decoration: none; font-weight: 700;">Ver Inmueble</a>
-                ${visita.estado === 'pendiente' ? `<button onclick="cancelarVisita(${visita.id})" class="btn" style="background: #FFEBEE; color: #C62828; border: 1px solid #C62828; padding: 8px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">Cancelar Visita</button>` : ''}
-              </div>
-            </div>
-          `).join('');
-        } else {
-          vContainer.innerHTML = `<p style="color: var(--color-ink-muted); font-style: italic;">No tienes visitas agendadas actualmente.</p>`;
-        }
-      } catch (err) {
-        document.getElementById('visitas-list-container').innerHTML = `<p style="color: var(--color-terracotta);">Error al cargar visitas.</p>`;
-      }
-
-      // Cargar guardados preview
-      try {
-        const gRes = await fetch('/api/guardados', { credentials: 'include' });
-        const gData = await gRes.json();
-        const gContainer = document.getElementById('perfil-guardados-preview');
-        if (gData.inmuebles && gData.inmuebles.length > 0) {
-          gContainer.innerHTML = gData.inmuebles.map(inm => `
-            <div style="background: var(--color-cream); border: 1.5px solid var(--color-ink); border-radius: 8px; overflow: hidden; padding: 12px;">
-              <img src="${(inm.imagenes && inm.imagenes[0]) || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=300&q=80'}" alt="${inm.titulo}" style="width: 100%; height: 140px; object-fit: cover; border-radius: 6px; margin-bottom: 8px;">
-              <h4 style="font-family: var(--font-serif); font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(inm.titulo)}</h4>
-              <p style="font-size: 0.75rem; color: var(--color-ink-muted); margin-bottom: 8px;">${escapeHTML(inm.barrio)} · ${escapeHTML(inm.operacion)}</p>
-              <a href="/inmueble.html?id=${inm.id}" style="font-size: 0.8rem; font-weight: 700; color: var(--color-terracotta); text-decoration: underline;">Ver detalle</a>
-            </div>
-          `).join('');
-        } else {
-          gContainer.innerHTML = `<p style="color: var(--color-ink-muted); font-style: italic;">No tienes inmuebles guardados.</p>`;
-        }
-      } catch {
-        document.getElementById('perfil-guardados-preview').innerHTML = `<p style="color: var(--color-ink-muted);">Sin guardados.</p>`;
-      }
-    });
+      // Cargar datos del perfil
+      cargarPerfil(usuario)
+      cargarVisitas()
+      cargarGuardadosPerfil()
+    })
   </script>
+  <script src="/js/perfil.js"></script>
 
   <!-- MODAL DE AUTENTICACIÓN -->
   <div id="modal-auth" onclick="if(event.target === this) cerrarModalAuth()" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(22, 32, 43, 0.65); align-items: center; justify-content: center; padding: 16px;">

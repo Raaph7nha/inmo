@@ -223,14 +223,18 @@ function initFilterControls() {
   const minPriceInput = document.getElementById('filter-price-min');
   if (minPriceInput) {
     minPriceInput.addEventListener('input', (e) => {
-      AppState.filtros.precioMin = e.target.value ? Number(e.target.value) : null;
+      const val = e.target.value || '';
+      const num = parseInt(val.replace(/\./g, '').replace(/[^0-9]/g, ''), 10) || 0;
+      AppState.filtros.precioMin = num > 0 ? num : null;
       triggerPriceChange();
     });
   }
   const maxPriceInput = document.getElementById('filter-price-max');
   if (maxPriceInput) {
     maxPriceInput.addEventListener('input', (e) => {
-      AppState.filtros.precioMax = e.target.value ? Number(e.target.value) : null;
+      const val = e.target.value || '';
+      const num = parseInt(val.replace(/\./g, '').replace(/[^0-9]/g, ''), 10) || 0;
+      AppState.filtros.precioMax = num > 0 ? num : null;
       triggerPriceChange();
     });
   }
@@ -432,15 +436,15 @@ async function initPropertyDetailPage() {
   const btnWhatsapp = document.getElementById('detail-btn-whatsapp');
   if (btnWhatsapp) {
     const message = encodeURIComponent(
-      `Hola, estoy interesado(a) en el inmueble "${item.titulo}" (${item.barrio}) visto en HabitaBogotá con costo total de ${formatCOP(total)}. ¿Podemos coordinar una visita?`
+      `Hola, estoy interesado(a) en el inmueble "${vivienda.titulo}" (${vivienda.barrio}) visto en HabitaBogotá con costo total de ${formatCOP(vivienda.precio + vivienda.administracion)}. ¿Podemos coordinar una visita?`
     );
     btnWhatsapp.href = `https://wa.me/573001234567?text=${message}`;
   }
 
   // Requisitos específicos desde base de datos si existen
   const reqListEl = document.getElementById('detail-legal-list');
-  if (reqListEl && Array.isArray(item.requisitos) && item.requisitos.length > 0) {
-    const itemsHTML = item.requisitos
+  if (reqListEl && Array.isArray(vivienda.requisitos) && vivienda.requisitos.length > 0) {
+    const itemsHTML = vivienda.requisitos
       .map(
         (reqText) => `
       <li class="legal-box__item">
@@ -450,13 +454,13 @@ async function initPropertyDetailPage() {
     `
       )
       .join('');
-    const depositoHTML = item.deposito
-      ? `<li class="legal-box__item"><span class="legal-box__check">✓</span><span>Depósito en garantía: <strong>${formatCOP(item.deposito)}</strong></span></li>`
+    const depositoHTML = vivienda.deposito
+      ? `<li class="legal-box__item"><span class="legal-box__check">✓</span><span>Depósito en garantía: <strong>${formatCOP(vivienda.deposito)}</strong></span></li>`
       : '';
     reqListEl.innerHTML = itemsHTML + depositoHTML;
   }
 
-  const c = item.caracteristicas || {};
+  const c = vivienda.caracteristicas || {};
   const amenitiesContainer = document.getElementById('detail-amenities-container');
   if (amenitiesContainer) {
     const list = [
@@ -483,24 +487,24 @@ async function initPropertyDetailPage() {
   }
 
   const stationNameEl = document.getElementById('detail-station-name');
-  if (stationNameEl) stationNameEl.textContent = item.transporte.estacion;
+  if (stationNameEl && vivienda.transporte) stationNameEl.textContent = vivienda.transporte.estacion;
 
   const rulerEl = document.getElementById('detail-ruler-text');
-  if (rulerEl) {
-    rulerEl.textContent = `A exactamente ${item.transporte.distanciaCuadras} cuadras caminables (aprox. ${item.transporte.distanciaCuadras * 2} minutos a pie).`;
+  if (rulerEl && vivienda.transporte) {
+    rulerEl.textContent = `A exactamente ${vivienda.transporte.distanciaCuadras} cuadras caminables (aprox. ${vivienda.transporte.distanciaCuadras * 2} minutos a pie).`;
   }
 
   const superEl = document.getElementById('detail-super-text');
-  if (superEl) {
-    superEl.textContent = `${item.supermercado.nombre} a ${item.supermercado.distanciaCuadras} cuadras`;
+  if (superEl && vivienda.supermercado) {
+    superEl.textContent = `${vivienda.supermercado.nombre} a ${vivienda.supermercado.distanciaCuadras} cuadras`;
   }
 
   const riskBox = document.getElementById('detail-risk-box');
   if (riskBox) {
-    if (item.zonaRiesgo?.existe) {
+    if (vivienda.zonaRiesgo?.existe) {
       riskBox.style.display = 'block';
       const riskText = document.getElementById('detail-risk-text');
-      if (riskText) riskText.textContent = item.zonaRiesgo.detalle;
+      if (riskText) riskText.textContent = vivienda.zonaRiesgo.detalle;
     } else {
       riskBox.style.display = 'none';
     }
@@ -510,8 +514,8 @@ async function initPropertyDetailPage() {
   const btnComp = document.getElementById('btn-detail-compare');
 
   function updateDetailActionButtons() {
-    const isSaved = AppState.guardados.includes(item.id);
-    const isCompared = AppState.comparador.includes(item.id);
+    const isSaved = AppState.guardados.includes(vivienda.id);
+    const isCompared = AppState.comparador.includes(vivienda.id);
 
     if (btnFav) {
       btnFav.innerHTML = `
@@ -532,17 +536,17 @@ async function initPropertyDetailPage() {
     }
   }
 
-  if (btnFav) btnFav.onclick = () => toggleSaveProperty(item.id);
-  if (btnComp) btnComp.onclick = () => toggleCompareProperty(item.id);
+  if (btnFav) btnFav.onclick = () => toggleSaveProperty(vivienda.id);
+  if (btnComp) btnComp.onclick = () => toggleCompareProperty(vivienda.id);
 
   subscribeState(updateDetailActionButtons);
 
   const btnTourTrigger = document.getElementById('btn-detail-tour-trigger');
   if (btnTourTrigger) {
-    if (!item.tour_3d) {
+    if (!vivienda.tour_3d && !vivienda.tour3D) {
       btnTourTrigger.style.display = 'none';
     } else {
-      btnTourTrigger.onclick = () => openVirtualTour(item.id);
+      btnTourTrigger.onclick = () => openVirtualTour(vivienda.id);
     }
   }
 

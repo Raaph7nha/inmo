@@ -203,7 +203,51 @@ function actualizarHeaderAutenticado(usuario) {
   if (inicialesEl) inicialesEl.textContent = iniciales;
 }
 
+window.HabiAuth = {
+  usuario: null,
+  restaurarSesion: async function() {
+    try {
+      var res = await fetch('/api/auth/yo', { credentials: 'include' });
+      var data = await res.json();
+      if (data && data.usuario) {
+        this.usuario = data.usuario;
+        window.usuarioActual = data.usuario;
+        actualizarHeaderAutenticado(data.usuario);
+      } else {
+        this.usuario = null;
+        window.usuarioActual = null;
+      }
+    } catch (err) {
+      this.usuario = null;
+      window.usuarioActual = null;
+    }
+    return this.usuario;
+  },
+  renderHeader: function() {
+    if (this.usuario) {
+      actualizarHeaderAutenticado(this.usuario);
+    }
+  },
+  estaAutenticado: function() {
+    return Boolean(this.usuario);
+  }
+};
+
+window.verificarSesion = async function() {
+  await HabiAuth.restaurarSesion()
+  HabiAuth.renderHeader()
+  return HabiAuth.usuario
+};
+
 fetch('/api/auth/yo', { credentials: 'include' })
   .then(function(r) { return r.ok ? r.json() : null; })
-  .then(function(data) { if (data && data.usuario) actualizarHeaderAutenticado(data.usuario); })
-  .catch(function() {});
+  .then(function(data) {
+    if (data && data.usuario) {
+      window.usuarioActual = data.usuario;
+      actualizarHeaderAutenticado(data.usuario);
+    } else {
+      window.usuarioActual = null;
+    }
+  })
+  .catch(function() { window.usuarioActual = null; });
+

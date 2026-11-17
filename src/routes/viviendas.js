@@ -9,7 +9,7 @@ import { query, withTransaction, isDatabaseConfigured } from '../db.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
 import { validateQuery, validateParams, validateBody, sanitizeText } from '../middleware/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
-import { searchViviendas, getViviendaById, getBarriosResumen } from '../services/viviendasQuery.js';
+import { searchViviendas, getViviendaById, getBarriosResumen, getInmueblesByIds } from '../services/viviendasQuery.js';
 import { destroyCloudinaryAsset } from '../services/cloudinary.js';
 
 const router = Router();
@@ -143,6 +143,26 @@ router.get(
     `;
     const resDb = await query(sql, [req.usuario.id]);
     return res.json({ viviendas: resDb.rows });
+  })
+);
+
+// GET /api/viviendas/multiples?ids=1,2,3
+router.get(
+  '/multiples',
+  asyncHandler(async (req, res) => {
+    const idsRaw = req.query.ids || '';
+    const ids = String(idsRaw).split(',').map(Number).filter((n) => !isNaN(n) && n > 0);
+    if (!ids.length) {
+      return res.json({ ok: true, data: { items: [], inmuebles: [] } });
+    }
+    const items = await getInmueblesByIds(ids);
+    return res.json({
+      ok: true,
+      data: {
+        items,
+        inmuebles: items
+      }
+    });
   })
 );
 

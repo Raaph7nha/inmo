@@ -160,12 +160,14 @@ function searchViviendasMemory(filters = {}) {
     list = list.filter((item) => item.operacion === filters.operacion);
   }
 
-  if (filters.precio_min !== undefined && filters.precio_min !== null) {
-    list = list.filter((item) => item.costo_total >= Number(filters.precio_min));
+  if (filters.precio_min !== undefined && filters.precio_min !== null && Number(filters.precio_min) > 0) {
+    const minVal = Number(filters.precio_min);
+    list = list.filter((item) => (item.costo_total || (item.precio + (item.administracion || 0))) >= minVal);
   }
 
-  if (filters.precio_max !== undefined && filters.precio_max !== null) {
-    list = list.filter((item) => item.costo_total <= Number(filters.precio_max));
+  if (filters.precio_max !== undefined && filters.precio_max !== null && Number(filters.precio_max) > 0) {
+    const maxVal = Number(filters.precio_max);
+    list = list.filter((item) => (item.costo_total || (item.precio + (item.administracion || 0))) <= maxVal);
   }
 
   if (filters.habitaciones !== undefined && filters.habitaciones !== null && Number(filters.habitaciones) > 0) {
@@ -243,14 +245,14 @@ export async function searchViviendas(filters = {}) {
     conditions.push(`v.operacion = ${p}`);
   }
 
-  if (filters.precio_min !== undefined && filters.precio_min !== null) {
-    const p = pushParam(filters.precio_min);
-    conditions.push(`v.costo_total >= ${p}`);
+  if (filters.precio_min !== undefined && filters.precio_min !== null && Number(filters.precio_min) > 0) {
+    const p = pushParam(Number(filters.precio_min));
+    conditions.push(`(v.precio + COALESCE(v.administracion, 0)) >= ${p}`);
   }
 
-  if (filters.precio_max !== undefined && filters.precio_max !== null) {
-    const p = pushParam(filters.precio_max);
-    conditions.push(`v.costo_total <= ${p}`);
+  if (filters.precio_max !== undefined && filters.precio_max !== null && Number(filters.precio_max) > 0) {
+    const p = pushParam(Number(filters.precio_max));
+    conditions.push(`(v.precio + COALESCE(v.administracion, 0)) <= ${p}`);
   }
 
   if (filters.habitaciones !== undefined && filters.habitaciones !== null && filters.habitaciones > 0) {
@@ -418,6 +420,11 @@ export async function getViviendasByIds(ids) {
   const res = await query(sql, [ids]);
   return res.rows.map(formatViviendaRow);
 }
+
+export async function getInmueblesByIds(ids) {
+  return getViviendasByIds(ids);
+}
+
 
 export async function getBarriosResumen() {
   if (!isDatabaseConfigured()) {

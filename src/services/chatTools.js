@@ -226,12 +226,17 @@ export async function executeChatTool(toolName, rawArgs) {
       mejor_puntaje: 'costo_asc'
     };
 
+    let pMax = args.precio_max;
+    if (pMax && pMax > 15000000 && args.operacion !== 'venta') {
+      pMax = undefined;
+    }
+
     const dbResult = await searchViviendas({
       q: qMapped,
       tipo: args.tipo,
       operacion: args.operacion,
       precio_min: args.precio_min,
-      precio_max: args.precio_max,
+      precio_max: pMax,
       habitaciones: args.habitaciones_min,
       mascotas: args.mascotas,
       parqueadero: args.parqueadero,
@@ -240,8 +245,8 @@ export async function executeChatTool(toolName, rawArgs) {
       piscina: args.piscina,
       porteria: args.porteria,
       tour_3d: args.tour_3d,
-      orden: ordenMap[args.ordenar_por || 'mejor_puntaje'],
-      limite: 12
+      orden: ordenMap[args.ordenar_por || 'costo_asc'],
+      limite: 15
     });
 
     let candidatos = dbResult.viviendas || [];
@@ -272,11 +277,11 @@ export async function executeChatTool(toolName, rawArgs) {
       return { item, scoring };
     });
 
-    if (!args.ordenar_por || args.ordenar_por === 'mejor_puntaje') {
-      scored.sort((a, b) => b.scoring.puntaje - a.scoring.puntaje || a.item.costo_total - b.item.costo_total);
+    if (!args.ordenar_por || args.ordenar_por === 'mejor_puntaje' || args.ordenar_por === 'costo_asc') {
+      scored.sort((a, b) => a.item.costo_total - b.item.costo_total || b.scoring.puntaje - a.scoring.puntaje);
     }
 
-    const maxLimit = Math.min(args.limite || 5, 5);
+    const maxLimit = Math.min(Math.max(args.limite || 5, 3), 5);
     const top = scored.slice(0, maxLimit);
 
     return {

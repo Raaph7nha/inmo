@@ -36,8 +36,9 @@ const perfilSchema = z.object({
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
-  maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  path: '/',
+  maxAge: 7 * 24 * 60 * 60 * 1000
 };
 
 function signUserToken(user) {
@@ -145,7 +146,12 @@ router.post(
 
 // POST /api/auth/logout
 router.post('/logout', (_req, res) => {
-  res.clearCookie('habi_token', { httpOnly: true, sameSite: 'strict' });
+  res.clearCookie('habi_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    path: '/'
+  });
   return res.json({ ok: true, mensaje: 'Sesión cerrada correctamente.' });
 });
 

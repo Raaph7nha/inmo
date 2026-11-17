@@ -31,15 +31,15 @@ router.get(
   asyncHandler(async (req, res) => {
     const userId = req.usuario.id;
     const result = await query(
-      `SELECT vi.*, v.titulo, v.barrio, v.precio, v.operacion, v.tipo,
-              (SELECT url FROM imagenes_vivienda iv WHERE iv.vivienda_id = v.id ORDER BY iv.orden ASC LIMIT 1) as imagen_url
-       FROM visitas vi
-       JOIN viviendas v ON vi.vivienda_id = v.id
-       WHERE vi.usuario_id = $1
-       ORDER BY vi.creado_en DESC`,
+      `SELECT v.*, vi.titulo as vivienda_titulo, vi.barrio, vi.precio, vi.operacion, vi.tipo,
+              (SELECT url FROM imagenes_vivienda iv WHERE iv.vivienda_id = vi.id ORDER BY iv.orden ASC LIMIT 1) as imagen_url
+       FROM visitas v
+       JOIN viviendas vi ON vi.id = v.vivienda_id
+       WHERE v.usuario_id = $1
+       ORDER BY v.creado_en DESC`,
       [userId]
     );
-    return res.json({ ok: true, visitas: result.rows });
+    return res.json({ ok: true, visitas: result.rows, data: { visitas: result.rows } });
   })
 );
 
@@ -65,6 +65,20 @@ router.post(
     );
 
     return res.status(201).json({ ok: true, visita: result.rows[0] });
+  })
+);
+
+// DELETE /api/visitas/:id
+router.delete(
+  '/:id',
+  requireAuth,
+  validateParams(idParamSchema),
+  asyncHandler(async (req, res) => {
+    const userId = req.usuario.id;
+    const visitaId = req.validatedParams.id;
+
+    await query('DELETE FROM visitas WHERE id = $1 AND usuario_id = $2', [visitaId, userId]);
+    return res.json({ ok: true, mensaje: 'Visita eliminada' });
   })
 );
 
