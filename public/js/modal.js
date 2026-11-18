@@ -46,8 +46,8 @@ async function openVirtualTour(propertyId) {
   if (!item) {
     try {
       const res = await apiFetch(`/api/inmuebles/${propertyId}`);
-      item = res.inmueble;
-      cacheInmuebles([item]);
+      item = res.data || res.vivienda || res.inmueble;
+      if (item) cacheInmuebles([item]);
     } catch {
       item = null;
     }

@@ -26,6 +26,7 @@ const optionalNonNegNum = z.preprocess(emptyToUndefined, z.coerce.number().nonne
 
 const listQuerySchema = z.object({
   q: z.preprocess((v) => (typeof v === 'string' ? sanitizeText(v) : undefined), z.string().max(120).optional()),
+  localidad: z.preprocess((v) => (typeof v === 'string' && v.trim() !== '' ? sanitizeText(v) : undefined), z.string().max(100).optional()),
   tipo: z.preprocess(emptyToUndefined, z.enum(['todos', 'casa', 'apartamento', 'local', 'otro']).optional()),
   operacion: z.preprocess(emptyToUndefined, z.enum(['todos', 'arriendo', 'venta']).optional()),
   precio_min: optionalNonNegNum,
@@ -163,6 +164,15 @@ router.get(
         inmuebles: items
       }
     });
+  })
+);
+
+// GET /api/viviendas/localidades
+router.get(
+  '/localidades',
+  asyncHandler(async (_req, res) => {
+    const rows = await getBarriosResumen();
+    return res.json({ ok: true, data: rows });
   })
 );
 

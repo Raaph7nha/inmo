@@ -740,13 +740,15 @@ export const memoryStore = {
   getBarriosResumen() {
     const map = new Map();
     for (const item of SEED_VIVIENDAS) {
-      const key = `${item.barrio}|${item.localidad}`;
-      if (!map.has(key)) {
-        map.set(key, { id: item.id, barrio: item.barrio, localidad: item.localidad, cantidad: 0 });
+      if (item.activo === false) continue;
+      const loc = item.localidad;
+      if (!loc) continue;
+      if (!map.has(loc)) {
+        map.set(loc, { nombre: loc, localidad: loc, total: 0 });
       }
-      map.get(key).cantidad += 1;
+      map.get(loc).total += 1;
     }
-    return Array.from(map.values());
+    return Array.from(map.values()).sort((a, b) => b.total - a.total);
   },
   getGuardadosIds(usuarioId) {
     return [...(guardadosMap.get(usuarioId) || [])];

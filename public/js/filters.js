@@ -22,17 +22,24 @@ function buildInmueblesQueryParams(filters, sortOrder) {
   if (filters.tipo && filters.tipo !== 'todos') {
     params.set('tipo', filters.tipo);
   }
-  if (filters.keyword && filters.keyword.trim() !== '') {
-    params.set('q', filters.keyword.trim());
+  if (filters.localidad && filters.localidad !== 'todos') {
+    params.set('localidad', filters.localidad);
   }
-  if (filters.precioMin !== null && filters.precioMin !== undefined && filters.precioMin !== '') {
-    params.set('precio_min', String(filters.precioMin));
+  const qVal = filters.keyword || filters.q || '';
+  if (qVal && qVal.trim() !== '') {
+    params.set('q', qVal.trim());
   }
-  if (filters.precioMax !== null && filters.precioMax !== undefined && filters.precioMax !== '') {
-    params.set('precio_max', String(filters.precioMax));
+  const pMin = Number(filters.precioMin || filters.precio_min || 0);
+  if (pMin > 0) {
+    params.set('precio_min', String(pMin));
   }
-  if (filters.habitacionesMin > 0) {
-    params.set('habitaciones', String(filters.habitacionesMin));
+  const pMax = Number(filters.precioMax || filters.precio_max || 0);
+  if (pMax > 0) {
+    params.set('precio_max', String(pMax));
+  }
+  const hab = Number(filters.habitacionesMin || filters.habitaciones || 0);
+  if (hab > 0) {
+    params.set('habitaciones', String(hab));
   }
 
   if (filters.mascotas) params.set('mascotas', 'true');
@@ -53,25 +60,33 @@ function buildInmueblesQueryParams(filters, sortOrder) {
 // Sincroniza los controles del DOM con el estado actual de AppState.filtros
 function syncFilterControlsUI() {
   const f = AppState.filtros;
+  const opActive = f.operacion || 'todos';
 
   document.querySelectorAll('[data-op-btn]').forEach((btn) => {
-    btn.classList.toggle('segmented-pill--active', btn.getAttribute('data-op-btn') === f.operacion);
+    btn.classList.toggle('segmented-pill--active', btn.getAttribute('data-op-btn') === opActive);
+  });
+
+  document.querySelectorAll('.neighborhood-chip, .chip-localidad').forEach((btn) => {
+    const locAttr = btn.getAttribute('data-localidad') || btn.querySelector('span')?.textContent?.trim();
+    const isAct = Boolean(f.localidad && locAttr === f.localidad);
+    btn.classList.toggle('neighborhood-chip--active', isAct);
+    btn.classList.toggle('activo', isAct);
   });
 
   const tipoSelect = document.getElementById('filter-type');
   if (tipoSelect) tipoSelect.value = f.tipo || 'todos';
 
   const kwInput = document.getElementById('filter-keyword');
-  if (kwInput) kwInput.value = f.keyword || '';
+  if (kwInput) kwInput.value = f.keyword || f.q || '';
 
   const heroInput = document.getElementById('hero-search-input');
-  if (heroInput) heroInput.value = f.keyword || '';
+  if (heroInput) heroInput.value = f.keyword || f.q || '';
 
   const minInput = document.getElementById('filter-price-min');
-  if (minInput) minInput.value = f.precioMin ? String(f.precioMin) : '';
+  if (minInput) minInput.value = f.precioMin > 0 ? String(f.precioMin) : '';
 
   const maxInput = document.getElementById('filter-price-max');
-  if (maxInput) maxInput.value = f.precioMax ? String(f.precioMax) : '';
+  if (maxInput) maxInput.value = f.precioMax > 0 ? String(f.precioMax) : '';
 
   const roomsDisplay = document.getElementById('rooms-display-val');
   if (roomsDisplay) {
@@ -86,25 +101,18 @@ function syncFilterControlsUI() {
   });
 
   const sortSelect = document.getElementById('sort-select');
-  if (sortSelect) sortSelect.value = AppState.orden;
+  if (sortSelect && AppState.orden) sortSelect.value = AppState.orden;
 }
 
 function resetAllFilters() {
-  AppState.filtros = {
-    operacion: 'todos',
-    tipo: 'todos',
-    keyword: '',
-    precioMin: null,
-    precioMax: null,
-    habitacionesMin: 0,
-    mascotas: false,
-    parqueadero: false,
-    balcon: false,
-    gimnasio: false,
-    piscina: false,
-    porteria: false,
-    tour3D: false
-  };
+  AppState.filtros = { ...filtrosIniciales };
+  AppState.orden = null;
+  syncFilterControlsUI();
+  notifyFiltersChange();
+}
+
+function aplicarFiltros(nuevosFiltros = {}) {
+  Object.assign(AppState.filtros, nuevosFiltros);
   syncFilterControlsUI();
   notifyFiltersChange();
 }
@@ -112,11 +120,13 @@ function resetAllFilters() {
 // Aplica filtros sugeridos por Habi o URL
 function applySuggestedFilters(suggested = {}) {
   const f = AppState.filtros;
-  f.operacion = suggested.operacion || 'todos';
-  f.tipo = suggested.tipo || 'todos';
+  f.operacion = suggested.operacion && suggested.operacion !== 'todos' ? suggested.operacion : '';
+  f.tipo = suggested.tipo && suggested.tipo !== 'todos' ? suggested.tipo : '';
+  f.localidad = suggested.localidad || '';
   f.keyword = suggested.keyword || '';
-  f.precioMin = suggested.precioMin ?? null;
-  f.precioMax = suggested.precioMax ?? null;
+  f.q = suggested.keyword || '';
+  f.precioMin = suggested.precioMin ?? 0;
+  f.precioMax = suggested.precioMax ?? 0;
   f.habitacionesMin = suggested.habitacionesMin ?? 0;
   f.mascotas = Boolean(suggested.mascotas);
   f.parqueadero = Boolean(suggested.parqueadero);

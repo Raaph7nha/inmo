@@ -45,24 +45,31 @@ function getSessionId() {
   }
 }
 
+const filtrosIniciales = {
+  operacion: '',
+  tipo: '',
+  q: '',
+  keyword: '',
+  localidad: '',
+  precio_min: 0,
+  precio_max: 0,
+  precioMin: 0,
+  precioMax: 0,
+  habitaciones: 0,
+  habitacionesMin: 0,
+  mascotas: false,
+  parqueadero: false,
+  balcon: false,
+  gimnasio: false,
+  piscina: false,
+  porteria: false,
+  tour3D: false
+};
+
 const AppState = {
   sesionId: getSessionId(),
-  filtros: {
-    operacion: 'arriendo',
-    tipo: 'todos',
-    keyword: '',
-    precioMin: null,
-    precioMax: null,
-    habitacionesMin: 0,
-    mascotas: false,
-    parqueadero: false,
-    balcon: false,
-    gimnasio: false,
-    piscina: false,
-    porteria: false,
-    tour3D: false
-  },
-  orden: 'costo_asc',
+  filtros: { ...filtrosIniciales },
+  orden: null,
   resultados: [],
   totalResultados: 0,
   barrios: [],
@@ -171,8 +178,10 @@ async function fetchInmueblesForIds(ids) {
 
   if (missing.length > 0) {
     try {
-      const data = await apiFetch(`/api/viviendas?ids=${missing.join(',')}`);
-      const fetched = Array.isArray(data.data) ? data.data : (Array.isArray(data.viviendas) ? data.viviendas : []);
+      const data = await apiFetch(`/api/viviendas/multiples?ids=${missing.join(',')}`);
+      const fetched = Array.isArray(data.data?.items)
+        ? data.data.items
+        : (Array.isArray(data.data) ? data.data : (Array.isArray(data.viviendas) ? data.viviendas : []));
       cacheInmuebles(fetched);
     } catch {
       // Si falla la consulta masiva, intentamos buscar en resultados actuales si los hay

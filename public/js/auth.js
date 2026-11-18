@@ -83,8 +83,10 @@ window.submitLogin = function() {
     })
     .then(function(data) {
       if (data && data.usuario) {
+        window.usuarioActual = data.usuario;
         actualizarHeaderAutenticado(data.usuario);
         window.cerrarModalAuth();
+        if (typeof syncSessionLists === 'function') syncSessionLists();
         if (window.HabiAuth && HabiAuth._accionPendiente) {
           var accion = HabiAuth._accionPendiente;
           HabiAuth._accionPendiente = null;
@@ -157,8 +159,10 @@ window.submitRegistro = function() {
     })
     .then(function(data) {
       if (data && data.usuario) {
+        window.usuarioActual = data.usuario;
         actualizarHeaderAutenticado(data.usuario);
         window.cerrarModalAuth();
+        if (typeof syncSessionLists === 'function') syncSessionLists();
         if (window.HabiAuth && HabiAuth._accionPendiente) {
           var accion = HabiAuth._accionPendiente;
           HabiAuth._accionPendiente = null;
@@ -178,7 +182,11 @@ window.cerrarSesion = function() {
   fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
     .catch(function() {});
 
-  window.HabiAuth = { usuario: null };
+  window.usuarioActual = null;
+  if (window.HabiAuth) {
+    window.HabiAuth.usuario = null;
+    window.HabiAuth._accionPendiente = null;
+  }
 
   var btnEntrar = document.getElementById('btn-entrar');
   var dropdown = document.getElementById('usuario-dropdown');
@@ -194,7 +202,9 @@ window.cerrarSesion = function() {
 };
 
 function actualizarHeaderAutenticado(usuario) {
-  window.HabiAuth = { usuario: usuario };
+  window.usuarioActual = usuario;
+  window.HabiAuth = window.HabiAuth || {};
+  window.HabiAuth.usuario = usuario;
 
   var btnEntrar = document.getElementById('btn-entrar');
   var dropdown = document.getElementById('usuario-dropdown');

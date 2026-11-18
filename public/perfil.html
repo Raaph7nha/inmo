@@ -106,23 +106,20 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', async function() {
-      const usuario = await window.HabiAuth.restaurarSesion 
-        ? await (async () => { 
-            await HabiAuth.restaurarSesion(); 
-            return HabiAuth.usuario; 
-          })()
-        : null
+      const usuario = (window.HabiAuth && typeof window.HabiAuth.restaurarSesion === 'function')
+        ? await window.HabiAuth.restaurarSesion()
+        : null;
 
       if (!usuario) {
-        window.location.href = '/index.html'
-        return
+        window.location.href = '/index.html';
+        return;
       }
 
       // Cargar datos del perfil
-      cargarPerfil(usuario)
-      cargarVisitas()
-      cargarGuardadosPerfil()
-    })
+      cargarPerfil(usuario);
+      cargarVisitas();
+      cargarGuardadosPerfil();
+    });
   </script>
   <script src="/js/perfil.js"></script>
 

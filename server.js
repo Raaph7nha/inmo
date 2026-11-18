@@ -14,6 +14,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
 import { checkDbHealth, query } from './src/db.js';
+import { getBarriosResumen } from './src/services/viviendasQuery.js';
 import { apiLimiter } from './src/middleware/rateLimit.js';
 import { notFoundHandler, errorHandler } from './src/middleware/errorHandler.js';
 
@@ -141,6 +142,14 @@ app.get('/api/diagnostico', async (_req, res) => {
 });
 
 // Rutas REST de la plataforma
+app.get('/api/localidades', async (_req, res, next) => {
+  try {
+    const rows = await getBarriosResumen();
+    return res.json({ ok: true, data: rows });
+  } catch (err) {
+    return next(err);
+  }
+});
 app.use('/api/auth', authRouter);
 app.use('/api/cloudinary', cloudinaryRouter);
 app.use('/api/viviendas', viviendasRouter);
@@ -155,11 +164,20 @@ app.use('/api/visitas', visitasRouter);
 // Manejo de rutas API inexistentes
 app.use(notFoundHandler);
 
-// Servir frontend estático desde /public
+// Servir frontend estático desde /public sin caché en HTML, JS ni CSS
 app.use(
   express.static(publicDir, {
     extensions: ['html'],
-    maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0
+    etag: false,
+    lastModified: false,
+    maxAge: 0,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html') || filePath.endsWith('.js') || filePath.endsWith('.css')) {
+        res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+      }
+    }
   })
 );
 
@@ -177,7 +195,10 @@ pageRoutes.forEach(({ route, file }) => {
   app.get(route, (_req, res) => {
     const filePath = path.join(publicDir, file);
     if (fs.existsSync(filePath)) {
-      return res.sendFile(filePath);
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      return res.sendFile(filePath, { etag: false, lastModified: false });
     }
     return res.status(404).send('Página no encontrada');
   });
@@ -187,7 +208,10 @@ pageRoutes.forEach(({ route, file }) => {
 app.use((_req, res) => {
   const indexFile = path.join(publicDir, 'index.html');
   if (fs.existsSync(indexFile)) {
-    return res.sendFile(indexFile);
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    return res.sendFile(indexFile, { etag: false, lastModified: false });
   }
   return res.status(404).send('Recurso no encontrado');
 });

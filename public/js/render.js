@@ -218,20 +218,24 @@ function renderPropertyCardHTML(item) {
 function renderActiveChipsHTML(filters) {
   const chips = [];
 
-  if (filters.operacion !== 'todos') {
-    chips.push({ label: `Operación: ${filters.operacion}`, clear: () => { filters.operacion = 'todos'; syncFilterControlsUI(); notifyFiltersChange(); } });
+  if (filters.operacion && filters.operacion !== 'todos') {
+    chips.push({ label: `Operación: ${filters.operacion}`, clear: () => { filters.operacion = ''; syncFilterControlsUI(); notifyFiltersChange(); } });
   }
-  if (filters.tipo !== 'todos') {
-    chips.push({ label: `Tipo: ${filters.tipo}`, clear: () => { filters.tipo = 'todos'; syncFilterControlsUI(); notifyFiltersChange(); } });
+  if (filters.tipo && filters.tipo !== 'todos') {
+    chips.push({ label: `Tipo: ${filters.tipo}`, clear: () => { filters.tipo = ''; syncFilterControlsUI(); notifyFiltersChange(); } });
   }
-  if (filters.keyword && filters.keyword.trim() !== '') {
-    chips.push({ label: `"${filters.keyword.trim()}"`, clear: () => { filters.keyword = ''; syncFilterControlsUI(); notifyFiltersChange(); } });
+  if (filters.localidad) {
+    chips.push({ label: `Localidad: ${filters.localidad}`, clear: () => { filters.localidad = ''; syncFilterControlsUI(); notifyFiltersChange(); } });
   }
-  if (filters.precioMin) {
-    chips.push({ label: `Mín: ${formatCOP(filters.precioMin)}`, clear: () => { filters.precioMin = null; syncFilterControlsUI(); notifyFiltersChange(); } });
+  const kwVal = (filters.keyword || filters.q || '').trim();
+  if (kwVal !== '') {
+    chips.push({ label: `"${kwVal}"`, clear: () => { filters.keyword = ''; filters.q = ''; syncFilterControlsUI(); notifyFiltersChange(); } });
   }
-  if (filters.precioMax) {
-    chips.push({ label: `Máx: ${formatCOP(filters.precioMax)}`, clear: () => { filters.precioMax = null; syncFilterControlsUI(); notifyFiltersChange(); } });
+  if (filters.precioMin > 0) {
+    chips.push({ label: `Mín: ${formatCOP(filters.precioMin)}`, clear: () => { filters.precioMin = 0; syncFilterControlsUI(); notifyFiltersChange(); } });
+  }
+  if (filters.precioMax > 0) {
+    chips.push({ label: `Máx: ${formatCOP(filters.precioMax)}`, clear: () => { filters.precioMax = 0; syncFilterControlsUI(); notifyFiltersChange(); } });
   }
   if (filters.habitacionesMin > 0) {
     chips.push({ label: `${filters.habitacionesMin}+ hab`, clear: () => { filters.habitacionesMin = 0; syncFilterControlsUI(); notifyFiltersChange(); } });

@@ -124,14 +124,13 @@
 }
 .neighborhood-strip__scroll {
   display: flex;
-  gap: var(--space-3);
-  overflow-x: auto;
+  flex-wrap: wrap;
+  gap: var(--space-2);
   padding-bottom: var(--space-2);
-  scrollbar-width: thin;
 }
-.neighborhood-chip {
+.neighborhood-chip, .chip-localidad {
   flex: none;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   padding: 8px 14px;
@@ -146,11 +145,30 @@
   transition: all var(--speed-fast) var(--ease-editorial);
   white-space: nowrap;
 }
-.neighborhood-chip:hover, .neighborhood-chip--active {
+.neighborhood-chip:hover, .chip-localidad:hover {
+  background: var(--color-cream-light);
+  transform: translateY(-1px);
+}
+.neighborhood-chip--active, .chip-localidad.activo {
   background: var(--color-terracotta);
   color: var(--color-cream);
   border-color: var(--color-ink);
+  box-shadow: 2px 2px 0px var(--color-ink);
   transform: translateY(-1px);
+}
+.chip-count {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  opacity: 0.85;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(22, 32, 43, 0.08);
+}
+.chip-localidad.activo .chip-count,
+.neighborhood-chip--active .chip-count {
+  background: rgba(255, 255, 255, 0.22);
+  color: var(--color-cream);
+  opacity: 1;
 }
 
 /* --- MAPA ILUSTRADO DE BOGOTÁ --- */

@@ -160,6 +160,10 @@ function searchViviendasMemory(filters = {}) {
     list = list.filter((item) => item.operacion === filters.operacion);
   }
 
+  if (filters.localidad) {
+    list = list.filter((item) => item.localidad === filters.localidad);
+  }
+
   if (filters.precio_min !== undefined && filters.precio_min !== null && Number(filters.precio_min) > 0) {
     const minVal = Number(filters.precio_min);
     list = list.filter((item) => (item.costo_total || (item.precio + (item.administracion || 0))) >= minVal);
@@ -243,6 +247,11 @@ export async function searchViviendas(filters = {}) {
   if (filters.operacion && filters.operacion !== 'todos') {
     const p = pushParam(filters.operacion);
     conditions.push(`v.operacion = ${p}`);
+  }
+
+  if (filters.localidad) {
+    const p = pushParam(filters.localidad);
+    conditions.push(`v.localidad = ${p}`);
   }
 
   if (filters.precio_min !== undefined && filters.precio_min !== null && Number(filters.precio_min) > 0) {
@@ -431,15 +440,11 @@ export async function getBarriosResumen() {
     return memoryStore.getBarriosResumen();
   }
   const sql = `
-    SELECT
-      MIN(id) AS id,
-      barrio,
-      localidad,
-      COUNT(*)::int AS cantidad
+    SELECT localidad AS nombre, COUNT(*)::int AS total
     FROM viviendas
     WHERE activo = TRUE
-    GROUP BY barrio, localidad
-    ORDER BY MIN(id) ASC
+    GROUP BY localidad
+    ORDER BY total DESC
   `;
   const res = await query(sql);
   return res.rows;

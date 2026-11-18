@@ -40,29 +40,37 @@ function showToast(message, iconName = 'icon-check') {
   }, 3600);
 }
 
-// Leer filtros iniciales desde query params (ej. cuando se navega desde Habi en otra página)
-function hydrateFiltersFromURL() {
-  const params = new URLSearchParams(window.location.search);
-  if (!Array.from(params.keys()).length) return;
-
-  const f = AppState.filtros;
-  if (params.has('operacion')) f.operacion = params.get('operacion') || 'todos';
-  if (params.has('tipo')) f.tipo = params.get('tipo') || 'todos';
-  if (params.has('q')) f.keyword = params.get('q') || '';
-  if (params.has('precio_min')) f.precioMin = Number(params.get('precio_min')) || null;
-  if (params.has('precio_max')) f.precioMax = Number(params.get('precio_max')) || null;
-  if (params.has('habitaciones')) f.habitacionesMin = Number(params.get('habitaciones')) || 0;
-  if (params.get('mascotas') === 'true') f.mascotas = true;
-  if (params.get('parqueadero') === 'true') f.parqueadero = true;
-  if (params.get('balcon') === 'true') f.balcon = true;
-  if (params.get('gimnasio') === 'true') f.gimnasio = true;
-  if (params.get('piscina') === 'true') f.piscina = true;
-  if (params.get('porteria') === 'true') f.porteria = true;
-  if (params.get('tour_3d') === 'true') f.tour3D = true;
-  if (params.has('orden')) AppState.orden = params.get('orden') || 'costo_asc';
+// Inicialización de la Página de Inicio / Búsqueda (index.html)
+async function cargarLocalidades() {
+  try {
+    const res = await fetch('/api/localidades');
+    const data = await res.json();
+    const localidades = data?.data || data?.localidades || [];
+    const contenedor = document.getElementById('chips-localidades');
+    if (!contenedor || localidades.length === 0) return;
+    contenedor.innerHTML = localidades.map((loc) => `
+      <button
+        type="button"
+        class="neighborhood-chip chip-localidad"
+        onclick="filtrarPorLocalidad('${escapeHTML(loc.nombre || loc.localidad)}')"
+        data-localidad="${escapeHTML(loc.nombre || loc.localidad)}">
+        <span class="chip-icono">🏘</span>
+        <span>${escapeHTML(loc.nombre || loc.localidad)}</span>
+        <span class="chip-count">${loc.total}</span>
+      </button>
+    `).join('');
+    syncFilterControlsUI();
+  } catch (err) {
+    console.warn('No se pudieron cargar las localidades:', err);
+  }
 }
 
-// Inicialización de la Página de Inicio / Búsqueda (index.html)
+window.filtrarPorLocalidad = function (localidad) {
+  const yaActiva = AppState.filtros.localidad === localidad;
+  const nuevaLocalidad = yaActiva ? '' : localidad;
+  aplicarFiltros({ localidad: nuevaLocalidad });
+};
+
 async function initIndexPage() {
   const gridContainer = document.getElementById('results-grid');
   const countDisplay = document.getElementById('results-count-number');
@@ -70,32 +78,15 @@ async function initIndexPage() {
   const emptyBox = document.getElementById('search-empty-state');
   if (!gridContainer) return;
 
-  hydrateFiltersFromURL();
+  try {
+    sessionStorage.removeItem('habi_filtros');
+    localStorage.removeItem('habi_filtros');
+  } catch {}
+
+  AppState.filtros = { ...filtrosIniciales };
+  AppState.orden = null;
 
   let activeRequestId = 0;
-
-  function renderNeighborhoodChips(barrios) {
-    const neighborhoodScroll = document.getElementById('neighborhood-scroll');
-    if (!neighborhoodScroll || !Array.isArray(barrios)) return;
-
-    const seen = new Set();
-    const unique = barrios.filter((b) => {
-      if (seen.has(b.barrio)) return false;
-      seen.add(b.barrio);
-      return true;
-    });
-
-    neighborhoodScroll.innerHTML = unique
-      .map(
-        (b) => `
-      <button type="button" class="neighborhood-chip" onclick="filterByNeighborhood('${escapeHTML(b.barrio)}')" aria-label="Filtrar por ${escapeHTML(b.barrio)}">
-        <svg class="icon icon--sm" aria-hidden="true"><use href="/assets/icons.svg#icon-building"></use></svg>
-        <span>${escapeHTML(b.barrio)}</span>
-      </button>
-    `
-      )
-      .join('');
-  }
 
   function paintCurrentResults() {
     const items = AppState.resultados || [];
@@ -137,7 +128,6 @@ async function initIndexPage() {
 
       if (Array.isArray(data.barrios) && data.barrios.length > 0 && AppState.barrios.length === 0) {
         AppState.barrios = data.barrios;
-        renderNeighborhoodChips(data.barrios);
       }
 
       paintCurrentResults();
@@ -167,20 +157,19 @@ async function initIndexPage() {
   syncFilterControlsUI();
 
   await syncSessionLists();
+  cargarLocalidades();
   await fetchAndRenderResults();
 }
 
-window.filterByNeighborhood = function (barrioName) {
-  AppState.filtros.keyword = barrioName;
-  syncFilterControlsUI();
-  notifyFiltersChange();
+window.filterByNeighborhood = function (localidadName) {
+  window.filtrarPorLocalidad(localidadName);
 };
 
 function initFilterControls() {
   document.querySelectorAll('[data-op-btn]').forEach((btn) => {
     btn.onclick = () => {
       const op = btn.getAttribute('data-op-btn');
-      AppState.filtros.operacion = op;
+      AppState.filtros.operacion = op === 'todos' ? '' : op;
       syncFilterControlsUI();
       notifyFiltersChange();
     };
@@ -189,7 +178,7 @@ function initFilterControls() {
   const typeSelect = document.getElementById('filter-type');
   if (typeSelect) {
     typeSelect.addEventListener('change', (e) => {
-      AppState.filtros.tipo = e.target.value;
+      AppState.filtros.tipo = e.target.value === 'todos' ? '' : e.target.value;
       notifyFiltersChange();
     });
   }
@@ -199,6 +188,7 @@ function initFilterControls() {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       AppState.filtros.keyword = e.target.value;
+      AppState.filtros.q = e.target.value;
       notifyFiltersChange();
     }, 280);
   };
@@ -225,7 +215,7 @@ function initFilterControls() {
     minPriceInput.addEventListener('input', (e) => {
       const val = e.target.value || '';
       const num = parseInt(val.replace(/\./g, '').replace(/[^0-9]/g, ''), 10) || 0;
-      AppState.filtros.precioMin = num > 0 ? num : null;
+      AppState.filtros.precioMin = num > 0 ? num : 0;
       triggerPriceChange();
     });
   }
@@ -234,7 +224,7 @@ function initFilterControls() {
     maxPriceInput.addEventListener('input', (e) => {
       const val = e.target.value || '';
       const num = parseInt(val.replace(/\./g, '').replace(/[^0-9]/g, ''), 10) || 0;
-      AppState.filtros.precioMax = num > 0 ? num : null;
+      AppState.filtros.precioMax = num > 0 ? num : 0;
       triggerPriceChange();
     });
   }

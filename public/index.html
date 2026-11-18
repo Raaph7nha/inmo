@@ -18,17 +18,17 @@
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/components.css">
-  <link rel="stylesheet" href="/css/pages.css">
+  <link rel="stylesheet" href="/css/pages.css?v=20261118c">
   <link rel="stylesheet" href="/css/responsive.css">
 
   <!-- Scripts en orden estricto sin módulos ES (conectados a /api/*) -->
-  <script defer src="/js/state.js"></script>
-  <script defer src="/js/filters.js"></script>
-  <script defer src="/js/render.js"></script>
-  <script defer src="/js/compare.js"></script>
-  <script defer src="/js/modal.js"></script>
-  <script defer src="/js/chat.js"></script>
-  <script defer src="/js/main.js"></script>
+  <script defer src="/js/state.js?v=20261118c"></script>
+  <script defer src="/js/filters.js?v=20261118c"></script>
+  <script defer src="/js/render.js?v=20261118c"></script>
+  <script defer src="/js/compare.js?v=20261118c"></script>
+  <script defer src="/js/modal.js?v=20261118c"></script>
+  <script defer src="/js/chat.js?v=20261118c"></script>
+  <script defer src="/js/main.js?v=20261118c"></script>
 </head>
 <body>
 
@@ -181,12 +181,12 @@
   <!-- ==========================================================================
        FRANJA DE BARRIOS (Atajos visuales con ilustraciones)
        ========================================================================== -->
-  <section class="container neighborhood-strip" aria-label="Sectores destacados de Bogotá">
+  <section class="container neighborhood-strip" aria-label="Localidades de Bogotá">
     <div class="neighborhood-strip__header">
-      <span class="neighborhood-strip__title">Sectores y barrios de Bogotá</span>
+      <span class="neighborhood-strip__title">Localidades de Bogotá</span>
       <span style="font-size: var(--text-xs); color: var(--color-ink-muted);">Haz clic para filtrar rápidamente</span>
     </div>
-    <div class="neighborhood-strip__scroll" id="neighborhood-scroll">
+    <div class="neighborhood-strip__scroll" id="chips-localidades">
       <!-- Rellenado por JS -->
     </div>
   </section>
@@ -215,9 +215,9 @@
 
         <!-- Selector de Operación (Arriendo / Venta / Todos) -->
         <div class="segmented-pills" role="group" aria-label="Operación">
-          <button type="button" class="segmented-pill segmented-pill--active" data-op-btn="arriendo">Arriendo</button>
+          <button type="button" class="segmented-pill" data-op-btn="arriendo">Arriendo</button>
           <button type="button" class="segmented-pill" data-op-btn="venta">Venta</button>
-          <button type="button" class="segmented-pill" data-op-btn="todos">Todos</button>
+          <button type="button" class="segmented-pill segmented-pill--active" data-op-btn="todos">Todos</button>
         </div>
 
         <!-- Tipo de Inmueble -->
@@ -502,7 +502,7 @@
         <p style="font-size: var(--text-xs); color: var(--color-sand); margin-bottom: var(--space-3);">
           Nuestros asesores certificados te orientan en estudios de aseguradora y contratos sin costo adicional.
         </p>
-        <a href="https://wa.me/573001234567?text=Hola,%20tengo%20una%20consulta%20sobre%20un%20inmueble%20en%20HabitaBogot%C3%A1" target="_blank" rel="noopener noreferrer" class="btn btn--accent" style="width: 100%;">
+        <a href="https://wa.me/573186866186?text=Hola,%20tengo%20una%20consulta%20sobre%20un%20inmueble%20en%20HabitaBogot%C3%A1" target="_blank" rel="noopener noreferrer" class="btn btn--accent" style="width: 100%;">
           <svg class="icon icon--sm" aria-hidden="true"><use href="/assets/icons.svg#icon-whatsapp"></use></svg>
           <span>Asesoría por WhatsApp</span>
         </a>
