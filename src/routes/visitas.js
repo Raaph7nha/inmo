@@ -52,10 +52,16 @@ router.post(
     const userId = req.usuario.id;
     const { vivienda_id, fecha_preferida, horario, telefono, mensaje } = req.validatedBody;
 
-    const vCheck = await query('SELECT id FROM viviendas WHERE id = $1', [vivienda_id]);
+    const vCheck = await query(
+      'SELECT id, titulo, barrio, precio, COALESCE(administracion, 0) AS administracion FROM viviendas WHERE id = $1',
+      [vivienda_id]
+    );
     if (!vCheck.rows.length) {
       throw new AppError('La vivienda no existe.', 404, 'PROPERTY_NOT_FOUND');
     }
+
+    const vivienda = vCheck.rows[0];
+    const usuario = req.usuario;
 
     const result = await query(
       `INSERT INTO visitas (usuario_id, vivienda_id, fecha_preferida, horario, telefono, mensaje, estado)
@@ -64,7 +70,35 @@ router.post(
       [userId, vivienda_id, fecha_preferida, horario, telefono, mensaje || '']
     );
 
-    return res.status(201).json({ ok: true, visita: result.rows[0] });
+    const nuevaVisita = result.rows[0];
+    const costoTotal = Number(vivienda.precio || 0) + Number(vivienda.administracion || 0);
+
+    const mensajeWA = encodeURIComponent(
+`🏠 *Nueva visita agendada - HabitaBogotá*
+
+👤 *Usuario:* ${usuario.nombre || 'Usuario'}
+📧 *Correo:* ${usuario.correo || ''}
+📱 *Teléfono:* ${telefono}
+
+🏡 *Vivienda:* ${vivienda.titulo}
+📍 *Barrio:* ${vivienda.barrio}
+💰 *Costo total:* $${costoTotal.toLocaleString('es-CO')}/mes
+
+📅 *Fecha preferida:* ${fecha_preferida}
+🕐 *Horario:* ${horario}
+💬 *Mensaje:* ${mensaje || 'Sin mensaje adicional'}
+
+✅ Visita #${nuevaVisita.id} - Estado: Pendiente`
+    );
+
+    const urlWhatsApp = `https://wa.me/573186866186?text=${mensajeWA}`;
+
+    return res.status(201).json({
+      ok: true,
+      visita: nuevaVisita,
+      data: { visita: nuevaVisita, whatsapp_url: urlWhatsApp },
+      mensaje: '¡Visita agendada exitosamente!'
+    });
   })
 );
 

@@ -48,9 +48,23 @@ router.post(
       id = inserted.rows[0].id;
     }
 
+    const mensajeSoporte = encodeURIComponent(
+`📩 *Nuevo mensaje de soporte - HabitaBogotá*
+
+👤 *Nombre:* ${nombre}
+📧 *Correo:* ${correo}
+💬 *Mensaje:* ${mensaje}
+
+📅 ${new Date().toLocaleString('es-CO')}`
+    );
+
+    const urlSoporte = `https://wa.me/573186866186?text=${mensajeSoporte}`;
+
     return res.status(201).json({
       ok: true,
       id,
+      data: { id, whatsapp_url: urlSoporte },
+      whatsapp_url: urlSoporte,
       mensaje: `¡Gracias ${nombre}! Tu consulta ha sido radicada (#${id}). Te responderemos pronto.`
     });
   })

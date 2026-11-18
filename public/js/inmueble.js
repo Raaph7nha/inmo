@@ -75,7 +75,15 @@ window.submitVisita = async function() {
     const data = await res.json()
     if (res.ok) {
       cerrarModalVisita()
-      alert('¡Visita agendada! Te contactaremos pronto para confirmar.')
+      if (typeof showToast === 'function') {
+        showToast('¡Visita agendada! Redirigiendo a WhatsApp...')
+      }
+      const whatsappUrl = data?.data?.whatsapp_url || data?.whatsapp_url
+      if (whatsappUrl) {
+        setTimeout(() => {
+          window.open(whatsappUrl, '_blank')
+        }, 1500)
+      }
     } else {
       if (errEl) {
         errEl.textContent = data.mensaje || 'Error al agendar la visita.'
@@ -91,4 +99,23 @@ window.submitVisita = async function() {
       btn.textContent = 'Confirmar Visita'
     }
   }
+}
+
+window.contactarAsesor = function() {
+  const vivienda = window.viviendaActual
+  if (!vivienda) return
+  const precio = Number(vivienda.precio || 0)
+  const admon = Number(vivienda.administracion || 0)
+  const total = precio + admon
+  const msg = encodeURIComponent(
+`Hola, estoy interesado en la vivienda:
+
+🏡 *${vivienda.titulo}*
+📍 ${vivienda.barrio}, Bogotá
+💰 Arriendo: $${precio.toLocaleString('es-CO')} + 
+   Adm: $${admon.toLocaleString('es-CO')}
+   Total: $${total.toLocaleString('es-CO')}/mes
+
+¿Podría darme más información?`)
+  window.open('https://wa.me/573186866186?text=' + msg, '_blank')
 }

@@ -332,7 +332,7 @@ async function initPropertyDetailPage() {
     console.log('[Detalle] Respuesta completa:', JSON.stringify(data));
 
     const v = data?.data || data?.vivienda || data;
-    vivienda = v?.data || v;
+    var vivienda = v?.data || v;
 
     const precio = parseFloat(vivienda?.precio || vivienda?.canon || 0);
     const admon = parseFloat(vivienda?.administracion || vivienda?.admon || 0);
@@ -348,6 +348,7 @@ async function initPropertyDetailPage() {
     vivienda.area_m2 = area;
     vivienda.imagenes = imagenes;
 
+    window.viviendaActual = vivienda;
     cacheInmuebles([vivienda]);
   } catch (err) {
     const mainEl = document.getElementById('main-content');
@@ -434,11 +435,11 @@ async function initPropertyDetailPage() {
   if (total) total.textContent = formatCOP(vivienda.precio + vivienda.administracion);
 
   const btnWhatsapp = document.getElementById('detail-btn-whatsapp');
-  if (btnWhatsapp) {
+  if (btnWhatsapp && btnWhatsapp.tagName === 'A') {
     const message = encodeURIComponent(
-      `Hola, estoy interesado(a) en el inmueble "${vivienda.titulo}" (${vivienda.barrio}) visto en HabitaBogotá con costo total de ${formatCOP(vivienda.precio + vivienda.administracion)}. ¿Podemos coordinar una visita?`
+      `Hola, estoy interesado en la vivienda:\n\n🏡 *${vivienda.titulo}*\n📍 ${vivienda.barrio}, Bogotá\n💰 Arriendo: $${Number(vivienda.precio).toLocaleString('es-CO')} + \n   Adm: $${Number(vivienda.administracion).toLocaleString('es-CO')}\n   Total: $${Number(vivienda.precio + vivienda.administracion).toLocaleString('es-CO')}/mes\n\n¿Podría darme más información?`
     );
-    btnWhatsapp.href = `https://wa.me/573001234567?text=${message}`;
+    btnWhatsapp.href = `https://wa.me/573186866186?text=${message}`;
   }
 
   // Requisitos específicos desde base de datos si existen
@@ -643,8 +644,14 @@ function initHelpPage() {
             mensaje: msgInput.value.trim()
           })
         });
-        showToast(res.mensaje || '¡Tu consulta ha sido radicada!');
+        showToast(res.mensaje || '¡Tu consulta ha sido radicada! Redirigiendo a WhatsApp...');
         supportForm.reset();
+        const whatsappUrl = res?.data?.whatsapp_url || res?.whatsapp_url;
+        if (whatsappUrl) {
+          setTimeout(() => {
+            window.open(whatsappUrl, '_blank');
+          }, 1500);
+        }
       } catch (err) {
         showToast(err.message || 'No se pudo enviar la consulta.', 'icon-alert');
       } finally {
