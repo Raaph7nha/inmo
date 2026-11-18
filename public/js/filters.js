@@ -48,7 +48,6 @@ function buildInmueblesQueryParams(filters, sortOrder) {
   if (filters.gimnasio) params.set('gimnasio', 'true');
   if (filters.piscina) params.set('piscina', 'true');
   if (filters.porteria) params.set('porteria', 'true');
-  if (filters.tour3D) params.set('tour_3d', 'true');
 
   if (sortOrder) {
     params.set('orden', sortOrder);
@@ -134,7 +133,6 @@ function applySuggestedFilters(suggested = {}) {
   f.gimnasio = Boolean(suggested.gimnasio);
   f.piscina = Boolean(suggested.piscina);
   f.porteria = Boolean(suggested.porteria);
-  f.tour3D = Boolean(suggested.tour3D);
 
   syncFilterControlsUI();
   notifyFiltersChange();

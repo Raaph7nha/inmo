@@ -404,8 +404,7 @@
         balcon: Boolean(filtros.balcon),
         gimnasio: Boolean(filtros.gimnasio),
         piscina: Boolean(filtros.piscina),
-        porteria: Boolean(filtros.porteria),
-        tour3D: Boolean(filtros.tour3D)
+        porteria: Boolean(filtros.porteria)
       },
       'costo_asc'
     );

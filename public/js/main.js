@@ -532,15 +532,6 @@ async function initPropertyDetailPage() {
 
   subscribeState(updateDetailActionButtons);
 
-  const btnTourTrigger = document.getElementById('btn-detail-tour-trigger');
-  if (btnTourTrigger) {
-    if (!vivienda.tour_3d && !vivienda.tour3D) {
-      btnTourTrigger.style.display = 'none';
-    } else {
-      btnTourTrigger.onclick = () => openVirtualTour(vivienda.id);
-    }
-  }
-
   updateDetailActionButtons();
 }
 

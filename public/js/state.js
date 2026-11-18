@@ -62,8 +62,7 @@ const filtrosIniciales = {
   balcon: false,
   gimnasio: false,
   piscina: false,
-  porteria: false,
-  tour3D: false
+  porteria: false
 };
 
 const AppState = {

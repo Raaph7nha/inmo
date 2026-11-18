@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ficha de Inmueble — HabitaBogotá</title>
-  <meta name="description" content="Detalle de inmueble en Bogotá con desglose transparente de costos, requisitos legales, mapa con transporte y tour 360.">
+  <meta name="description" content="Detalle de inmueble en Bogotá con desglose transparente de costos, requisitos legales y entorno barrial.">
 
   <!-- Tipografías: Fraunces + DM Sans + Space Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -128,10 +128,6 @@
         <div class="detail-gallery">
           <div class="detail-gallery__main">
             <img id="detail-photo-main" src="" alt="Fotografía principal del inmueble">
-            <button type="button" class="btn btn--accent" id="btn-detail-tour-trigger" style="position: absolute; bottom: 14px; left: 14px; box-shadow: var(--shadow-offset);">
-              <svg class="icon icon--sm" aria-hidden="true"><use href="/assets/icons.svg#icon-3d"></use></svg>
-              <span>Recorrer en 360° (Tour Virtual)</span>
-            </button>
           </div>
           <div class="detail-gallery__thumbs">
             <div class="detail-gallery__thumb">
@@ -268,31 +264,6 @@
     </div>
 
   </main>
-
-  <!-- MODAL TOUR VIRTUAL 360° -->
-  <div class="modal-overlay" id="modal-tour-3d" role="dialog" aria-modal="true" aria-labelledby="tour-modal-title">
-    <div class="modal-window">
-      <div class="modal-window__header">
-        <h2 class="modal-window__title" id="tour-modal-title">Tour Virtual 360° Interactivo</h2>
-        <button type="button" class="btn btn--ghost" style="padding: 4px;" onclick="closeModal()" aria-label="Cerrar tour virtual">
-          <svg class="icon"><use href="/assets/icons.svg#icon-close"></use></svg>
-        </button>
-      </div>
-      <div style="padding: 8px 16px; background: var(--color-sand); display: flex; gap: 8px; overflow-x: auto; border-bottom: 1px solid var(--color-ink);">
-        <button type="button" class="btn btn--primary" style="padding: 4px 12px; font-size: var(--text-xs);" data-tour-room="sala" onclick="setTourPanoramaRoom('sala')">Sala Principal</button>
-        <button type="button" class="btn btn--secondary" style="padding: 4px 12px; font-size: var(--text-xs);" data-tour-room="hab" onclick="setTourPanoramaRoom('hab')">Habitación Máster</button>
-        <button type="button" class="btn btn--secondary" style="padding: 4px 12px; font-size: var(--text-xs);" data-tour-room="cocina" onclick="setTourPanoramaRoom('cocina')">Cocina Integral</button>
-      </div>
-      <div class="tour360-canvas" id="tour-canvas-stage" tabindex="0" aria-label="Panorama 360 interactivo. Arrastra con el cursor o usa las flechas del teclado.">
-        <div class="tour360-panorama" id="tour-panorama-bg"></div>
-        <div class="tour360-hint">
-          <span>⇄ Arrastra para girar 360°</span>
-          <span>·</span>
-          <span>Teclado: ← / →</span>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- MODAL DE AUTENTICACIÓN -->
   <div id="modal-auth" onclick="if(event.target === this) cerrarModalAuth()" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(22, 32, 43, 0.65); align-items: center; justify-content: center; padding: 16px;">

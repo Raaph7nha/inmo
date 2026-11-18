@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HabitaBogotá — Plataforma Inmobiliaria Transparente en Bogotá (COP)</title>
-  <meta name="description" content="Plataforma inmobiliaria en Bogotá con desglose transparente de costos (Arriendo + Adm = Total), mapa ilustrado con transporte y zonas de riesgo, tour 3D y comparador accesible.">
+  <meta name="description" content="Plataforma inmobiliaria en Bogotá con desglose transparente de costos (Arriendo + Adm = Total), mapa ilustrado con transporte y zonas de riesgo y comparador accesible.">
   <meta property="og:title" content="HabitaBogotá — Inmuebles en Bogotá sin costos ocultos">
-  <meta property="og:description" content="Encuentra apartamentos, casas y locales con desglose de costos en primer nivel, tour virtual y comparador.">
+  <meta property="og:description" content="Encuentra apartamentos, casas y locales con desglose de costos en primer nivel y comparador.">
 
   <!-- Tipografías con carácter: Fraunces (serif expresiva) + DM Sans (humanista) + Space Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -141,7 +141,7 @@
           Habitar Bogotá <em>sin costos ocultos.</em>
         </h1>
         <p class="hero-editorial__lead">
-          Aquí sí se ve el costo real desde el primer vistazo: <strong>Arriendo + Administración = Total</strong>. Explora con mapas de transporte, distancias a pie y recorridos 360°.
+          Aquí sí se ve el costo real desde el primer vistazo: <strong>Arriendo + Administración = Total</strong>. Explora con mapas de transporte y distancias a pie en Bogotá.
         </p>
 
         <!-- Buscador Rápido del Hero -->
@@ -335,14 +335,6 @@
                 <span class="toggle-chip__switch" aria-hidden="true"></span>
               </button>
 
-              <button type="button" class="toggle-chip" data-toggle-filter="tour3D" aria-pressed="false">
-                <span class="toggle-chip__content">
-                  <svg class="icon icon--sm" aria-hidden="true"><use href="/assets/icons.svg#icon-3d"></use></svg>
-                  <span>Con Tour Virtual 3D</span>
-                </span>
-                <span class="toggle-chip__switch" aria-hidden="true"></span>
-              </button>
-
             </div>
           </div>
 
@@ -411,44 +403,6 @@
 
     </div>
   </main>
-
-  <!-- ==========================================================================
-       MODAL TOUR VIRTUAL 360° ARRASTRABLE (Accesible con foco y Esc)
-       ========================================================================== -->
-  <div class="modal-overlay" id="modal-tour-3d" role="dialog" aria-modal="true" aria-labelledby="tour-modal-title">
-    <div class="modal-window">
-      <div class="modal-window__header">
-        <h2 class="modal-window__title" id="tour-modal-title">Tour Virtual 360° Interactivo</h2>
-        <button type="button" class="btn btn--ghost" style="padding: 4px;" onclick="closeModal()" aria-label="Cerrar tour virtual">
-          <svg class="icon"><use href="/assets/icons.svg#icon-close"></use></svg>
-        </button>
-      </div>
-
-      <!-- Selector de Ambiente -->
-      <div style="padding: 8px 16px; background: var(--color-sand); display: flex; gap: 8px; overflow-x: auto; border-bottom: 1px solid var(--color-ink);">
-        <button type="button" class="btn btn--primary" style="padding: 4px 12px; font-size: var(--text-xs);" data-tour-room="sala" onclick="setTourPanoramaRoom('sala')">Sala Principal</button>
-        <button type="button" class="btn btn--secondary" style="padding: 4px 12px; font-size: var(--text-xs);" data-tour-room="hab" onclick="setTourPanoramaRoom('hab')">Habitación Máster</button>
-        <button type="button" class="btn btn--secondary" style="padding: 4px 12px; font-size: var(--text-xs);" data-tour-room="cocina" onclick="setTourPanoramaRoom('cocina')">Cocina Integral</button>
-      </div>
-
-      <!-- Escenario 360 Arrastrable -->
-      <div class="tour360-canvas" id="tour-canvas-stage" tabindex="0" aria-label="Panorama 360 interactivo. Arrastra con el cursor o usa las flechas izquierda y derecha del teclado para girar.">
-        <div class="tour360-panorama" id="tour-panorama-bg"></div>
-        <div class="tour360-hint">
-          <span>⇄ Arrastra para explorar</span>
-          <span>·</span>
-          <span>Teclado: ← / →</span>
-        </div>
-      </div>
-
-      <div style="padding: 12px 16px; background: var(--color-sand); display: flex; justify-content: space-between; align-items: center; font-size: var(--text-xs);">
-        <span>Tratamiento fotográfico en alta resolución</span>
-        <button type="button" class="btn btn--secondary" id="tour-add-compare-btn" style="padding: 4px 10px; font-size: var(--text-xs);">
-          Agregar a Comparador
-        </button>
-      </div>
-    </div>
-  </div>
 
   <!-- ==========================================================================
        MODAL DE ALERTAS POR CORREO

@@ -52,7 +52,7 @@
   box-shadow: var(--shadow-offset);
 }
 
-/* Botón de alto contraste (Efecto Von Restorff: Tour 3D y "Ver más filtros") */
+/* Botón de alto contraste (Efecto Von Restorff: "Ver más filtros") */
 .btn--accent {
   background: var(--color-mustard);
   color: var(--color-ink);
@@ -170,25 +170,6 @@
   flex-direction: column;
   gap: 6px;
   z-index: 5;
-}
-
-/* Insignia circular de Tour 3D */
-.badge-tour3d-circle {
-  width: 36px;
-  height: 36px;
-  background: var(--color-mustard);
-  color: var(--color-ink);
-  border: 1.5px solid var(--color-ink);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-flat);
-  cursor: pointer;
-  transition: transform var(--speed-fast) var(--ease-editorial);
-}
-.badge-tour3d-circle:hover {
-  transform: rotate(15deg) scale(1.1);
 }
 
 /* Botón Guardar / Favorito con microinteracción de rebote */
@@ -583,7 +564,7 @@
   justify-content: center;
 }
 
-/* --- MODAL DIALOG ACCESIBLE (Tour 3D y Alertas) --- */
+/* --- MODAL DIALOG ACCESIBLE (Alertas) --- */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -621,44 +602,6 @@
 }
 .modal-window__title {
   font-size: var(--text-lg);
-}
-
-/* Escenario del Tour 360 */
-.tour360-canvas {
-  position: relative;
-  width: 100%;
-  height: 420px;
-  background: #111;
-  overflow: hidden;
-  cursor: grab;
-  user-select: none;
-}
-.tour360-canvas:active {
-  cursor: grabbing;
-}
-.tour360-panorama {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 300%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-  will-change: transform;
-}
-.tour360-hint {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(22, 32, 43, 0.85);
-  color: var(--color-cream);
-  padding: 5px 12px;
-  border-radius: var(--radius-pill);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  display: flex;
-  gap: 8px;
 }
 
 /* --- TOASTS DE NOTIFICACIÓN --- */

@@ -29,7 +29,6 @@ export const CHAT_TOOLS_SCHEMA = [
           gimnasio: { type: 'boolean', description: 'True si requiere gimnasio' },
           piscina: { type: 'boolean', description: 'True si requiere piscina' },
           porteria: { type: 'boolean', description: 'True si requiere portería 24/7' },
-          tour_3d: { type: 'boolean', description: 'True si requiere recorrido virtual 3D' },
           max_cuadras_transporte: { type: 'integer', description: 'Distancia máxima en cuadras a estación de TransMilenio o paradero SITP' },
           ordenar_por: { type: 'string', enum: ['mejor_puntaje', 'costo_asc', 'costo_desc', 'recientes'], description: 'Criterio de orden' },
           limite: { type: 'integer', description: 'Cantidad máxima de resultados (1 a 5)' }
@@ -85,7 +84,6 @@ const buscarArgsSchema = z.object({
   gimnasio: z.boolean().optional(),
   piscina: z.boolean().optional(),
   porteria: z.boolean().optional(),
-  tour_3d: z.boolean().optional(),
   max_cuadras_transporte: z.coerce.number().int().min(1).max(30).optional(),
   ordenar_por: z.enum(['mejor_puntaje', 'costo_asc', 'costo_desc', 'recientes']).optional(),
   limite: z.coerce.number().int().min(1).max(5).optional()
@@ -141,12 +139,6 @@ function scoreCandidate(item, args) {
     motivos.push(`Precaución cercana: ${item.zonaRiesgo.detalle}`);
   }
 
-  // 4. Tour 3D disponible
-  if (item.tour_3d) {
-    puntaje += 10;
-    motivos.push('Cuenta con Tour Virtual 360°');
-  }
-
   return {
     puntaje: Math.min(100, puntaje),
     motivos
@@ -168,7 +160,6 @@ function summarizeForTool(item, scoring = null) {
     banos: item.banos,
     area_m2: item.area_m2,
     caracteristicas: item.caracteristicas,
-    tour_3d: item.tour_3d,
     estacion_cercana: item.transporte?.estacion || null,
     cuadras_transporte: item.transporte?.distanciaCuadras ?? null,
     supermercado_cercano: item.supermercado?.nombre || null,
@@ -194,7 +185,6 @@ function buildFrontendFilters(args) {
   if (args.gimnasio) filters.gimnasio = true;
   if (args.piscina) filters.piscina = true;
   if (args.porteria) filters.porteria = true;
-  if (args.tour_3d) filters.tour3D = true;
   return filters;
 }
 
@@ -244,7 +234,6 @@ export async function executeChatTool(toolName, rawArgs) {
       gimnasio: args.gimnasio,
       piscina: args.piscina,
       porteria: args.porteria,
-      tour_3d: args.tour_3d,
       orden: ordenMap[args.ordenar_por || 'costo_asc'],
       limite: 15
     });

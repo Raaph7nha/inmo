@@ -76,7 +76,6 @@ function renderPropertyCardHTML(item) {
     : ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'];
   const photoIndex = cardPhotoIndexMap[id] || 0;
   const area = Number(item.area_m2 ?? item.m2 ?? 0);
-  const tour3D = Boolean(item.tour_3d ?? item.tour3D);
   const car = item.caracteristicas || {};
 
   const safeTitulo = escapeHTML(item.titulo);
@@ -132,12 +131,6 @@ function renderPropertyCardHTML(item) {
             </span>
           ` : ''}
         </div>
-
-        ${tour3D ? `
-          <button type="button" class="badge-tour3d-circle" style="position: absolute; bottom: 10px; left: 10px;" onclick="openVirtualTour(${id})" aria-label="Abrir Tour Virtual 360° de ${safeTitulo}">
-            <svg class="icon icon--sm" aria-hidden="true"><use href="/assets/icons.svg#icon-3d"></use></svg>
-          </button>
-        ` : ''}
 
         <button type="button" class="btn-fav ${isSaved ? 'btn-fav--active' : ''}" onclick="toggleSaveProperty(${id})" aria-label="${isSaved ? 'Quitar de guardados' : 'Guardar en mis inmuebles'}" aria-pressed="${isSaved}">
           <svg class="icon" aria-hidden="true">
@@ -257,9 +250,6 @@ function renderActiveChipsHTML(filters) {
   }
   if (filters.porteria) {
     chips.push({ label: 'Portería 24/7', clear: () => { filters.porteria = false; syncFilterControlsUI(); notifyFiltersChange(); } });
-  }
-  if (filters.tour3D) {
-    chips.push({ label: 'Tour 3D', clear: () => { filters.tour3D = false; syncFilterControlsUI(); notifyFiltersChange(); } });
   }
 
   window._activeFilterRemovers = chips.map((c) => c.clear);

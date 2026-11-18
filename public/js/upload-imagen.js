@@ -96,7 +96,6 @@ async function initCloudinaryUpload() {
       const gimnasio = document.getElementById('pub-gimnasio').checked;
       const piscina = document.getElementById('pub-piscina').checked;
       const porteria = document.getElementById('pub-porteria').checked;
-      const tour_3d = document.getElementById('pub-tour3d').checked;
 
       const lat = Number(document.getElementById('pub-lat').value) || 4.6500;
       const lng = Number(document.getElementById('pub-lng').value) || -74.0500;
@@ -121,7 +120,6 @@ async function initCloudinaryUpload() {
         gimnasio,
         piscina,
         porteria,
-        tour_3d,
         requisitos: ['Estudio de aseguradora tradicional', 'Codeudor con finca raíz'],
         lat,
         lng,

@@ -131,21 +131,6 @@
 
   </main>
 
-  <!-- MODAL TOUR VIRTUAL 360° -->
-  <div class="modal-overlay" id="modal-tour-3d" role="dialog" aria-modal="true" aria-labelledby="tour-modal-title">
-    <div class="modal-window">
-      <div class="modal-window__header">
-        <h2 class="modal-window__title" id="tour-modal-title">Tour Virtual 360° Interactivo</h2>
-        <button type="button" class="btn btn--ghost" style="padding: 4px;" onclick="closeModal()" aria-label="Cerrar tour virtual">
-          <svg class="icon"><use href="/assets/icons.svg#icon-close"></use></svg>
-        </button>
-      </div>
-      <div class="tour360-canvas" id="tour-canvas-stage" tabindex="0">
-        <div class="tour360-panorama" id="tour-panorama-bg"></div>
-      </div>
-    </div>
-  </div>
-
   <!-- MODAL DE AUTENTICACIÓN -->
   <div id="modal-auth" onclick="if(event.target === this) cerrarModalAuth()" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(22, 32, 43, 0.65); align-items: center; justify-content: center; padding: 16px;">
     <div style="width: 100%; max-width: 420px; background: var(--color-cream, #FAF7F2); border: 2px solid var(--color-ink, #16202B); border-radius: 12px; padding: 0; box-shadow: 6px 6px 0px var(--color-terracotta, #B4472B); overflow: hidden; font-family: var(--font-sans, 'DM Sans', sans-serif);">
