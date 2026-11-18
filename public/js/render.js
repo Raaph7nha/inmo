@@ -65,8 +65,10 @@ function renderErrorBoxHTML(message = 'No pudimos cargar los inmuebles, intenta 
 
 function renderPropertyCardHTML(item) {
   const id = Number(item.id);
-  const isSaved = AppState.guardados.includes(id);
-  const isCompared = AppState.comparador.includes(id);
+  const guardadosList = window.HabiState?.guardados || AppState.guardados || [];
+  const comparadorList = window.HabiState?.comparador || AppState.comparador || [];
+  const isSaved = guardadosList.includes(id);
+  const isCompared = comparadorList.includes(id);
   const isRent = item.operacion === 'arriendo';
   const totalCost = calculateTotalCost(item);
   const precioBase = Number(item.precio ?? item.precioBase ?? 0);
@@ -117,7 +119,7 @@ function renderPropertyCardHTML(item) {
   const featuredClass = item.destacado ? 'card-property--featured' : '';
 
   return `
-    <article class="card-property ${featuredClass}" id="property-card-${id}" data-id="${id}">
+    <article class="card-property ${featuredClass}" id="property-card-${id}" data-id="${id}" data-vivienda-id="${id}">
       <div class="card-property__media">
         <img class="card-property__img" src="${safeImg}" alt="${safeTitulo} en ${safeBarrio}" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';">
 
@@ -132,7 +134,7 @@ function renderPropertyCardHTML(item) {
           ` : ''}
         </div>
 
-        <button type="button" class="btn-fav ${isSaved ? 'btn-fav--active' : ''}" onclick="toggleSaveProperty(${id})" aria-label="${isSaved ? 'Quitar de guardados' : 'Guardar en mis inmuebles'}" aria-pressed="${isSaved}">
+        <button type="button" class="btn-fav btn-guardar ${isSaved ? 'btn-fav--active activo' : ''}" data-id="${id}" onclick="toggleGuardar(${id})" aria-label="${isSaved ? 'Quitar de guardados' : 'Guardar en mis inmuebles'}" aria-pressed="${isSaved}">
           <svg class="icon" aria-hidden="true">
             <use href="/assets/icons.svg#${isSaved ? 'icon-heart-filled' : 'icon-heart'}"></use>
           </svg>
@@ -194,7 +196,7 @@ function renderPropertyCardHTML(item) {
 
         <div class="card-property__footer">
           <label class="checkbox-compare">
-            <input type="checkbox" onchange="toggleCompareProperty(${id}, this.checked)" ${isCompared ? 'checked' : ''} aria-label="Comparar ${safeTitulo}">
+            <input type="checkbox" class="btn-comparar ${isCompared ? 'activo' : ''}" data-id="${id}" onchange="toggleComparador(${id}, this.checked)" ${isCompared ? 'checked' : ''} aria-label="Comparar ${safeTitulo}">
             <span>Comparar</span>
           </label>
 

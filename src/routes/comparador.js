@@ -17,7 +17,10 @@ const router = Router();
 const MAX_COMPARE = 3;
 
 const bodySchema = z.object({
-  inmueble_id: z.coerce.number().int().positive()
+  inmueble_id: z.coerce.number().int().positive().optional(),
+  vivienda_id: z.coerce.number().int().positive().optional()
+}).refine((d) => d.inmueble_id || d.vivienda_id, {
+  message: 'Se requiere vivienda_id o inmueble_id.'
 });
 
 const paramSchema = z.object({
@@ -95,7 +98,7 @@ router.post(
   optionalAuth,
   validateBody(bodySchema),
   asyncHandler(async (req, res) => {
-    const { inmueble_id } = req.validatedBody;
+    const inmueble_id = req.validatedBody.vivienda_id || req.validatedBody.inmueble_id;
     const userId = req.usuario?.id;
 
     if (!userId) {
@@ -150,12 +153,14 @@ router.post(
   })
 );
 
-// DELETE /api/comparador
+// DELETE /api/comparador (si incluye vivienda_id/inmueble_id borra uno; sin body vacía todo)
 router.delete(
   '/',
   optionalAuth,
   asyncHandler(async (req, res) => {
     const userId = req.usuario?.id;
+    const singleId = Number(req.body?.vivienda_id || req.body?.inmueble_id || 0);
+
     if (!userId) {
       return res.json({
         ok: true,
@@ -164,6 +169,21 @@ router.delete(
         items: [],
         data: { ids: [], items: [], inmuebles: [] }
       });
+    }
+
+    if (singleId > 0) {
+      if (!isDatabaseConfigured()) {
+        memoryStore.removeComparador(userId, singleId);
+        const data = await fetchUserCompare(userId);
+        return res.json(data);
+      }
+
+      await query(
+        'DELETE FROM comparador WHERE usuario_id = $1 AND vivienda_id = $2',
+        [userId, singleId]
+      );
+      const data = await fetchUserCompare(userId);
+      return res.json(data);
     }
 
     if (!isDatabaseConfigured()) {

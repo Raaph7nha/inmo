@@ -86,7 +86,11 @@ window.submitLogin = function() {
         window.usuarioActual = data.usuario;
         actualizarHeaderAutenticado(data.usuario);
         window.cerrarModalAuth();
-        if (typeof syncSessionLists === 'function') syncSessionLists();
+        if (window.HabiState && typeof window.HabiState.sincronizarConAPI === 'function') {
+          window.HabiState.sincronizarConAPI();
+        } else if (typeof syncSessionLists === 'function') {
+          syncSessionLists();
+        }
         if (window.HabiAuth && HabiAuth._accionPendiente) {
           var accion = HabiAuth._accionPendiente;
           HabiAuth._accionPendiente = null;
@@ -162,7 +166,11 @@ window.submitRegistro = function() {
         window.usuarioActual = data.usuario;
         actualizarHeaderAutenticado(data.usuario);
         window.cerrarModalAuth();
-        if (typeof syncSessionLists === 'function') syncSessionLists();
+        if (window.HabiState && typeof window.HabiState.sincronizarConAPI === 'function') {
+          window.HabiState.sincronizarConAPI();
+        } else if (typeof syncSessionLists === 'function') {
+          syncSessionLists();
+        }
         if (window.HabiAuth && HabiAuth._accionPendiente) {
           var accion = HabiAuth._accionPendiente;
           HabiAuth._accionPendiente = null;
@@ -186,6 +194,7 @@ window.cerrarSesion = function() {
   if (window.HabiAuth) {
     window.HabiAuth.usuario = null;
     window.HabiAuth._accionPendiente = null;
+    window.HabiAuth._sesionPromise = null;
   }
 
   var btnEntrar = document.getElementById('btn-entrar');
@@ -199,6 +208,10 @@ window.cerrarSesion = function() {
   if (menu) menu.classList.remove('abierto');
   if (nombreEl) nombreEl.textContent = '';
   if (inicialesEl) inicialesEl.textContent = '';
+
+  if (window.HabiState) {
+    window.HabiState.init();
+  }
 };
 
 function actualizarHeaderAutenticado(usuario) {
@@ -225,23 +238,31 @@ function actualizarHeaderAutenticado(usuario) {
 
 window.HabiAuth = {
   usuario: null,
-  restaurarSesion: async function() {
-    try {
-      var res = await fetch('/api/auth/yo', { credentials: 'include' });
-      var data = await res.json();
-      if (data && data.usuario) {
-        this.usuario = data.usuario;
-        window.usuarioActual = data.usuario;
-        actualizarHeaderAutenticado(data.usuario);
-      } else {
-        this.usuario = null;
+  _sesionPromise: null,
+  restaurarSesion: async function(forzar) {
+    if (this._sesionPromise && !forzar) {
+      return this._sesionPromise;
+    }
+    var self = this;
+    this._sesionPromise = (async function() {
+      try {
+        var res = await fetch('/api/auth/yo', { credentials: 'include' });
+        var data = res.ok ? await res.json() : null;
+        if (data && data.usuario) {
+          self.usuario = data.usuario;
+          window.usuarioActual = data.usuario;
+          actualizarHeaderAutenticado(data.usuario);
+        } else {
+          self.usuario = null;
+          window.usuarioActual = null;
+        }
+      } catch (err) {
+        self.usuario = null;
         window.usuarioActual = null;
       }
-    } catch (err) {
-      this.usuario = null;
-      window.usuarioActual = null;
-    }
-    return this.usuario;
+      return self.usuario;
+    })();
+    return this._sesionPromise;
   },
   renderHeader: function() {
     if (this.usuario) {
@@ -254,20 +275,17 @@ window.HabiAuth = {
 };
 
 window.verificarSesion = async function() {
-  await HabiAuth.restaurarSesion()
-  HabiAuth.renderHeader()
-  return HabiAuth.usuario
+  await HabiAuth.restaurarSesion();
+  HabiAuth.renderHeader();
+  return HabiAuth.usuario;
 };
 
-fetch('/api/auth/yo', { credentials: 'include' })
-  .then(function(r) { return r.ok ? r.json() : null; })
-  .then(function(data) {
-    if (data && data.usuario) {
-      window.usuarioActual = data.usuario;
-      actualizarHeaderAutenticado(data.usuario);
-    } else {
-      window.usuarioActual = null;
-    }
-  })
-  .catch(function() { window.usuarioActual = null; });
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    window.HabiAuth.restaurarSesion();
+  });
+} else {
+  window.HabiAuth.restaurarSesion();
+}
+
 

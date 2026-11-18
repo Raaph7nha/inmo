@@ -156,7 +156,6 @@ async function initIndexPage() {
   initFilterControls();
   syncFilterControlsUI();
 
-  await syncSessionLists();
   cargarLocalidades();
   await fetchAndRenderResults();
 }
@@ -314,8 +313,6 @@ async function initPropertyDetailPage() {
   const params = new URLSearchParams(window.location.search);
   const rawId = params.get('id') || '1';
   const propertyId = Number(String(rawId).replace(/^inm-/, '')) || 1;
-
-  await syncSessionLists();
 
   try {
     const data = await apiFetch(`/api/inmuebles/${propertyId}`);
@@ -505,8 +502,11 @@ async function initPropertyDetailPage() {
   const btnComp = document.getElementById('btn-detail-compare');
 
   function updateDetailActionButtons() {
-    const isSaved = AppState.guardados.includes(vivienda.id);
-    const isCompared = AppState.comparador.includes(vivienda.id);
+    const id = Number(vivienda.id);
+    const guardadosList = window.HabiState?.guardados || AppState.guardados || [];
+    const comparadorList = window.HabiState?.comparador || AppState.comparador || [];
+    const isSaved = guardadosList.includes(id);
+    const isCompared = comparadorList.includes(id);
 
     if (btnFav) {
       btnFav.innerHTML = `
@@ -527,70 +527,12 @@ async function initPropertyDetailPage() {
     }
   }
 
-  if (btnFav) btnFav.onclick = () => toggleSaveProperty(vivienda.id);
-  if (btnComp) btnComp.onclick = () => toggleCompareProperty(vivienda.id);
+  if (btnFav) btnFav.onclick = () => toggleGuardar(vivienda.id);
+  if (btnComp) btnComp.onclick = () => toggleComparador(vivienda.id);
 
   subscribeState(updateDetailActionButtons);
 
   updateDetailActionButtons();
-}
-
-// Inicialización de la Página de Guardados (guardados.html)
-async function initSavedPage() {
-  const container = document.getElementById('saved-properties-grid');
-  const emptyState = document.getElementById('saved-empty-state');
-  const countText = document.getElementById('saved-count-lead');
-
-  function updateSavedView() {
-    const savedItems = AppState.guardadosInmuebles || [];
-
-    if (countText) {
-      countText.textContent = `${savedItems.length} propiedad${savedItems.length === 1 ? '' : 'es'} guardada${savedItems.length === 1 ? '' : 's'}`;
-    }
-
-    if (savedItems.length === 0) {
-      if (container) container.innerHTML = '';
-      if (emptyState) emptyState.style.display = 'block';
-    } else {
-      if (emptyState) emptyState.style.display = 'none';
-      if (container) container.innerHTML = savedItems.map(renderPropertyCardHTML).join('');
-    }
-  }
-
-  if (container) container.innerHTML = renderSkeletonCardsHTML(3);
-
-  try {
-    await syncSessionLists();
-    subscribeState(updateSavedView);
-    updateSavedView();
-  } catch {
-    if (container) {
-      container.innerHTML = renderErrorBoxHTML(
-        'No pudimos cargar tus inmuebles guardados, intenta de nuevo',
-        'window.location.reload()'
-      );
-    }
-  }
-}
-
-// Inicialización de la Página de Comparador (comparador.html)
-async function initComparePage() {
-  const container = document.getElementById('compare-table-content');
-  if (!container) return;
-
-  container.innerHTML = '<div class="skeleton-shimmer" style="height: 280px; margin: 16px;"></div>';
-
-  await syncSessionLists();
-
-  function updateCompareView() {
-    renderComparisonTable(container);
-  }
-
-  subscribeState(updateCompareView);
-  updateCompareView();
-
-  const clearBtn = document.getElementById('btn-clear-compare-page');
-  if (clearBtn) clearBtn.onclick = clearAllComparison;
 }
 
 // Inicialización de la Página de Ayuda y Requisitos (ayuda.html)
@@ -649,10 +591,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (path.endsWith('inmueble.html') || path.endsWith('/inmueble')) {
     initPropertyDetailPage();
-  } else if (path.endsWith('guardados.html') || path.endsWith('/guardados')) {
-    initSavedPage();
-  } else if (path.endsWith('comparador.html') || path.endsWith('/comparador')) {
-    initComparePage();
+  } else if (path.endsWith('guardados.html') || path.endsWith('/guardados') || path.endsWith('comparador.html') || path.endsWith('/comparador') || path.endsWith('perfil.html') || path.endsWith('/perfil') || path.endsWith('publicar.html') || path.endsWith('/publicar')) {
+    // Manejado por su módulo dedicado (guardados.js, comparador.js, perfil.js, upload-imagen.js)
   } else if (path.endsWith('ayuda.html') || path.endsWith('/ayuda')) {
     initHelpPage();
   } else {

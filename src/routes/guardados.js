@@ -16,7 +16,10 @@ import { memoryStore } from '../services/memoryStore.js';
 const router = Router();
 
 const bodySchema = z.object({
-  inmueble_id: z.coerce.number().int().positive()
+  inmueble_id: z.coerce.number().int().positive().optional(),
+  vivienda_id: z.coerce.number().int().positive().optional()
+}).refine((d) => d.inmueble_id || d.vivienda_id, {
+  message: 'Se requiere vivienda_id o inmueble_id.'
 });
 
 const paramSchema = z.object({
@@ -94,7 +97,7 @@ router.post(
   optionalAuth,
   validateBody(bodySchema),
   asyncHandler(async (req, res) => {
-    const { inmueble_id } = req.validatedBody;
+    const inmueble_id = req.validatedBody.vivienda_id || req.validatedBody.inmueble_id;
     const userId = req.usuario?.id;
 
     if (!userId) {
@@ -125,6 +128,41 @@ router.post(
 
     const data = await fetchUserSaved(userId);
     return res.status(201).json(data);
+  })
+);
+
+// DELETE /api/guardados (con body { vivienda_id } o { inmueble_id })
+router.delete(
+  '/',
+  optionalAuth,
+  validateBody(bodySchema),
+  asyncHandler(async (req, res) => {
+    const userId = req.usuario?.id;
+    const viviendaId = req.validatedBody.vivienda_id || req.validatedBody.inmueble_id;
+
+    if (!userId) {
+      return res.json({
+        ok: true,
+        ids: [],
+        inmuebles: [],
+        items: [],
+        data: { ids: [], items: [], inmuebles: [] }
+      });
+    }
+
+    if (!isDatabaseConfigured()) {
+      memoryStore.removeGuardado(userId, viviendaId);
+      const data = await fetchUserSaved(userId);
+      return res.json(data);
+    }
+
+    await query(
+      'DELETE FROM guardados WHERE usuario_id = $1 AND vivienda_id = $2',
+      [userId, viviendaId]
+    );
+
+    const data = await fetchUserSaved(userId);
+    return res.json(data);
   })
 );
 

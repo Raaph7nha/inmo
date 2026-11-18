@@ -11,14 +11,11 @@ function renderComparisonTable(containerElement) {
   const tableWrap = document.getElementById('compare-table-wrap');
   const countNote = document.getElementById('compare-subtitle');
 
-  if (items.length < 2) {
+  if (items.length === 0) {
     if (emptyBox) emptyBox.style.display = 'block';
     if (tableWrap) tableWrap.style.display = 'none';
     if (countNote) {
-      countNote.textContent =
-        items.length === 1
-          ? 'Tienes 1 inmueble seleccionado. Agrega al menos otro para comparar.'
-          : 'Selecciona 2 o 3 inmuebles desde la búsqueda para contrastar sus costos.';
+      countNote.textContent = 'Selecciona hasta 3 inmuebles desde la búsqueda para contrastar sus costos.';
     }
     return;
   }
@@ -27,7 +24,10 @@ function renderComparisonTable(containerElement) {
   if (tableWrap) tableWrap.style.display = 'block';
 
   if (countNote) {
-    countNote.textContent = `Comparando ${items.length} inmuebles de Bogotá (costo total transparente, comodidades y transporte).`;
+    countNote.textContent =
+      items.length === 1
+        ? 'Tienes 1 inmueble en el comparador. Puedes agregar hasta 2 más para contrastar costos y comodidades.'
+        : `Comparando ${items.length} inmuebles de Bogotá (costo total transparente, comodidades y transporte).`;
   }
 
   const totalCosts = items.map(calculateTotalCost);
@@ -48,7 +48,7 @@ function renderComparisonTable(containerElement) {
               </div>
               <h4 style="font-family: var(--font-serif); font-size: 1rem; line-height: 1.25; margin-bottom: 4px;">${escapeHTML(it.titulo)}</h4>
               <p style="font-size: var(--text-xs); color: var(--color-ink-muted); margin-bottom: 8px;">${escapeHTML(it.barrio)} · ${escapeHTML(it.tipo)}</p>
-              <button type="button" class="btn btn--ghost" style="padding: 4px 8px; font-size: var(--text-xs); color: var(--color-alert);" onclick="toggleCompareProperty(${it.id}, false)">
+              <button type="button" class="btn btn--ghost" style="padding: 4px 8px; font-size: var(--text-xs); color: var(--color-alert);" onclick="toggleComparador(${it.id}, false)">
                 Quitar de la lista
               </button>
             </td>

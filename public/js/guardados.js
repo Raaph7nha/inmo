@@ -3,50 +3,82 @@
  * Lógica de la página Mis Guardados tanto para anónimos como autenticados.
  */
 
-async function initSavedPage() {
+let ultimoIdsGuardadosKey = null;
+
+async function cargarGridGuardados() {
   const container = document.getElementById('saved-properties-grid');
   const emptyState = document.getElementById('saved-empty-state');
   const countText = document.getElementById('saved-count-lead');
   if (!container) return;
 
-  container.innerHTML = renderSkeletonCardsHTML(3);
-
-  let items = [];
-  if (!window.usuarioActual) {
-    try {
-      const ids = JSON.parse(localStorage.getItem('habi_guardados') || '[]');
-      if (ids.length > 0) {
-        const res = await apiFetch(`/api/viviendas/multiples?ids=${ids.join(',')}`);
-        items = res.data?.items || res.items || [];
-      }
-    } catch {
-      items = [];
-    }
-  } else {
-    try {
-      const res = await apiFetch('/api/guardados');
-      const data = res.data || res;
-      items = data.items || data.inmuebles || [];
-    } catch {
-      items = [];
-    }
-  }
-
-  AppState.guardadosInmuebles = items;
-  AppState.guardados = items.map(x => Number(x.id));
+  const ids = Array.isArray(window.HabiState?.guardados) ? window.HabiState.guardados : [];
+  const idsKey = ids.join(',');
 
   if (countText) {
-    countText.textContent = `${items.length} propiedad${items.length === 1 ? '' : 'es'} guardada${items.length === 1 ? '' : 's'}`;
+    countText.textContent = `${ids.length} propiedad${ids.length === 1 ? '' : 'es'} guardada${ids.length === 1 ? '' : 's'}`;
   }
 
-  if (items.length === 0) {
+  if (ids.length === 0) {
+    ultimoIdsGuardadosKey = '';
+    AppState.guardadosInmuebles = [];
     container.innerHTML = '';
     if (emptyState) emptyState.style.display = 'block';
-  } else {
-    if (emptyState) emptyState.style.display = 'none';
-    container.innerHTML = items.map(renderPropertyCardHTML).join('');
+    window.HabiState?.actualizarContadores();
+    return;
   }
-  updateCountersUI();
+
+  if (idsKey === ultimoIdsGuardadosKey && AppState.guardadosInmuebles.length === ids.length) {
+    if (emptyState) emptyState.style.display = 'none';
+    container.innerHTML = AppState.guardadosInmuebles.map(renderPropertyCardHTML).join('');
+    window.HabiState?.actualizarContadores();
+    return;
+  }
+
+  ultimoIdsGuardadosKey = idsKey;
+  if (emptyState) emptyState.style.display = 'none';
+  container.innerHTML = renderSkeletonCardsHTML(Math.min(ids.length, 6));
+
+  try {
+    const res = await fetch(`/api/viviendas/multiples?ids=${ids.join(',')}`, {
+      credentials: 'include',
+      headers: { 'X-Sesion-Id': AppState.sesionId }
+    });
+    const data = await res.json();
+    const items = data?.data?.items || data?.data?.inmuebles || data?.items || [];
+    cacheInmuebles(items);
+    AppState.guardadosInmuebles = items;
+
+    if (countText) {
+      countText.textContent = `${items.length} propiedad${items.length === 1 ? '' : 'es'} guardada${items.length === 1 ? '' : 's'}`;
+    }
+
+    if (items.length === 0) {
+      container.innerHTML = '';
+      if (emptyState) emptyState.style.display = 'block';
+    } else {
+      if (emptyState) emptyState.style.display = 'none';
+      container.innerHTML = items.map(renderPropertyCardHTML).join('');
+    }
+  } catch (err) {
+    console.warn('Error cargando viviendas guardadas:', err);
+    container.innerHTML = renderErrorBoxHTML(
+      'No pudimos cargar tus inmuebles guardados, intenta de nuevo',
+      'window.location.reload()'
+    );
+  }
+
+  window.HabiState?.actualizarContadores();
+}
+
+async function initSavedPage() {
+  const container = document.getElementById('saved-properties-grid');
+  if (!container) return;
+
+  subscribeState(() => {
+    cargarGridGuardados();
+  });
+
+  await cargarGridGuardados();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

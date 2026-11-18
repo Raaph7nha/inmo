@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="/css/pages.css">
   <link rel="stylesheet" href="/css/responsive.css">
 
+  <script defer src="/js/auth.js"></script>
   <script defer src="/js/state.js"></script>
   <script defer src="/js/filters.js"></script>
   <script defer src="/js/render.js"></script>
@@ -24,6 +25,7 @@
   <script defer src="/js/modal.js"></script>
   <script defer src="/js/chat.js"></script>
   <script defer src="/js/main.js"></script>
+  <script defer src="/js/perfil.js"></script>
 </head>
 <body>
 
@@ -121,7 +123,6 @@
       cargarGuardadosPerfil();
     });
   </script>
-  <script src="/js/perfil.js"></script>
 
   <!-- MODAL DE AUTENTICACIÓN -->
   <div id="modal-auth" onclick="if(event.target === this) cerrarModalAuth()" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(22, 32, 43, 0.65); align-items: center; justify-content: center; padding: 16px;">
@@ -171,6 +172,5 @@
     </div>
   </div>
 
-  <script src="/js/auth.js"></script>
 </body>
 </html>
